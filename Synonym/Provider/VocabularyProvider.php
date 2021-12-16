@@ -30,6 +30,7 @@ class VocabularyProvider extends BaseProvider
     protected function asyncQuery(string $word): PromiseInterface
     {
         // 支持原生缓存
+        // $date = date_create_from_format(\DateTimeInterface::RFC7231, $response->getHeaderLine('date'));
         $queryStr = urlencode($word);
         return $this->client->getAsync(
             "https://www.vocabulary.com/dictionary/{$queryStr}",
@@ -84,16 +85,6 @@ class VocabularyProvider extends BaseProvider
             $this->definitions[] = $def;
         }
         return $words;
-    }
-
-    public function query(string $word): array
-    {
-        /** @var ResponseInterface $response */
-        $response = $this->asyncQuery($word)->wait();
-
-        $body = $response->getBody();
-
-        return $this->analyze($body);
     }
 
     /**

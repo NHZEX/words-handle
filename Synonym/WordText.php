@@ -2,7 +2,7 @@
 
 namespace app\Service\TextWord\Synonym;
 
-class WordText implements \Stringable
+class WordText implements \Stringable, \JsonSerializable
 {
     protected bool $relevant;
 
@@ -12,8 +12,8 @@ class WordText implements \Stringable
 
     public function __construct(string $text, bool $relevant = true, ?string $partOfSpeech = null)
     {
-        $this->text = $text;
-        $this->relevant = $relevant;
+        $this->text         = $text;
+        $this->relevant     = $relevant;
         $this->partOfSpeech = $partOfSpeech;
     }
 
@@ -30,5 +30,14 @@ class WordText implements \Stringable
     public function __toString(): string
     {
         return $this->text;
+    }
+
+    public function jsonSerialize(): array
+    {
+        return [
+            'text'         => $this->text,
+            'relevant'     => $this->relevant,
+            'partOfSpeech' => $this->partOfSpeech,
+        ];
     }
 }

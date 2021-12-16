@@ -49,16 +49,4 @@ class ReversoProvider extends BaseProvider
                 return new WordText($node->innerText(), str_contains($node->attr('class'), 'relevant'));
             });
     }
-
-    public function query(string $word): array
-    {
-        /** @var ResponseInterface $response */
-        $response = $this->asyncQuery($word)->wait();
-
-        // $date = date_create_from_format(\DateTimeInterface::RFC7231, $response->getHeaderLine('date'));
-
-        $body = $response->getBody();
-
-        return $this->analyze($body);
-    }
 }

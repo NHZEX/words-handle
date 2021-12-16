@@ -2,13 +2,18 @@
 
 namespace app\Service\TextWord\Synonym\Provider;
 
+use app\Model\SynonymStoreModel;
 use app\Service\TextWord\Synonym\WordText;
 use Composer\CaBundle\CaBundle;
 use GuzzleHttp\Client;
+use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\RequestOptions;
+use JsonMapper;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use function date_create_from_format;
+use function dump;
 use function sys_get_temp_dir;
 use function tempnam;
 
@@ -18,7 +23,7 @@ abstract class BaseProvider
 
     protected Client $client;
 
-    public function __construct(bool $debug)
+    public function __construct(bool $debug = false)
     {
         $this->debug = $debug;
         $this->initClient();
@@ -56,5 +61,33 @@ abstract class BaseProvider
     /**
      * @return array<int, WordText>
      */
-    abstract public function query(string $word): array;
+    public function query(string $word): array
+    {
+        return $this->queryAsync($word)->wait();
+    }
+
+    public function queryAsync(string $word): PromiseInterface
+    {
+        $store = SynonymStoreModel::queryWord(static::getType(), $word);
+        if (!empty($store)) {
+            $mapper = new JsonMapper();
+            $mapper->bIgnoreVisibility = true;
+            $output = $mapper->mapArray($store->store->words, [], WordText::class);
+            return new FulfilledPromise($output);
+        }
+
+        return $this
+            ->asyncQuery($word)
+            ->then(function (ResponseInterface $response) {
+                $body = $response->getBody();
+                return $this->analyze($body);
+            })
+            ->then(function (array $words) use ($word) {
+                SynonymStoreModel::writeWord(static::getType(), $word, [
+                    'ver' => 1,
+                    'words' => $words,
+                ]);
+                return $words;
+            });
+    }
 }

@@ -51,14 +51,4 @@ class ThesaurusProvider extends BaseProvider
                 return new WordText($node->text(), $changeCount === 0);
             });
     }
-
-    public function query(string $word): array
-    {
-        /** @var ResponseInterface $response */
-        $response = $this->asyncQuery($word)->wait();
-
-        $body = $response->getBody();
-
-        return $this->analyze($body);
-    }
 }
