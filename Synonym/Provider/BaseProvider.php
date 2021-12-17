@@ -6,8 +6,10 @@ use app\Model\SynonymStoreModel;
 use app\Service\TextWord\Synonym\WordText;
 use Composer\CaBundle\CaBundle;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Promise\RejectedPromise;
 use GuzzleHttp\RequestOptions;
 use JsonMapper;
 use Psr\Http\Message\ResponseInterface;
@@ -69,7 +71,7 @@ abstract class BaseProvider
     {
         $store = SynonymStoreModel::queryWord(static::getType(), $word);
         if (!empty($store)) {
-            // todo 收录完整的查询数据 WordDefinition
+            // 可考虑收录完整的查询数据 WordDefinition
             $mapper = new JsonMapper();
             $mapper->bIgnoreVisibility = true;
             $output = $mapper->mapArray($store->store->words, [], WordText::class);
@@ -88,6 +90,15 @@ abstract class BaseProvider
                     'words' => $words,
                 ]);
                 return $words;
+            })
+            ->then(null, function (RequestException $exception) {
+                if (!$exception->hasResponse()) {
+                    return new RejectedPromise($exception);
+                }
+                if (404 === $exception->getResponse()->getStatusCode()) {
+                    return [];
+                }
+                return new RejectedPromise($exception);
             });
     }
 }
