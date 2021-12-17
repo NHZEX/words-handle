@@ -4,14 +4,10 @@ namespace app\Service\TextWord\Synonym\Provider;
 
 use app\Service\TextWord\Synonym\WordText;
 use GuzzleHttp\Promise\PromiseInterface;
-use GuzzleHttp\Promise\Utils;
 use GuzzleHttp\RequestOptions;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use function array_unique;
-use function date_create_from_format;
-use function dump;
 use function str_contains;
 use function urlencode;
 
@@ -50,6 +46,7 @@ class ReversoProvider extends BaseProvider
                 return new WordText($node->innerText(), str_contains($node->attr('class'), 'relevant'));
             });
 
+        // todo 简单聚合，之后暴力完整建议
         return array_unique($words);
     }
 }

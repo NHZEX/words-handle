@@ -11,6 +11,8 @@ use GuzzleHttp\Promise\Utils;
 use think\Container;
 use function array_merge;
 use function array_unique;
+use function array_values;
+use function strtolower;
 
 class SynonymService
 {
@@ -40,6 +42,7 @@ class SynonymService
      */
     protected function query(string $provider, string $word): array
     {
+        $word = strtolower($word);
         return $this->provider[$provider]->query($word);
     }
 
@@ -48,6 +51,7 @@ class SynonymService
      */
     public function queryAll(string $word): array
     {
+        $word = strtolower($word);
         $queryAll = [];
         foreach ($this->provider as $name => $provider) {
             $queryAll[$name] = $provider->queryAsync($word);
@@ -71,6 +75,6 @@ class SynonymService
                 }
             }
         }
-        return array_unique(array_merge($priority1, $priority2));
+        return array_values(array_unique(array_merge($priority1, $priority2)));
     }
 }

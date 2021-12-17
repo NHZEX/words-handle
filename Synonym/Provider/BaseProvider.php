@@ -12,10 +12,6 @@ use GuzzleHttp\RequestOptions;
 use JsonMapper;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
-use function date_create_from_format;
-use function dump;
-use function sys_get_temp_dir;
-use function tempnam;
 
 abstract class BaseProvider
 {
@@ -73,7 +69,7 @@ abstract class BaseProvider
     {
         $store = SynonymStoreModel::queryWord(static::getType(), $word);
         if (!empty($store)) {
-            // todo 收录完整的查询数据
+            // todo 收录完整的查询数据 WordDefinition
             $mapper = new JsonMapper();
             $mapper->bIgnoreVisibility = true;
             $output = $mapper->mapArray($store->store->words, [], WordText::class);
