@@ -31,20 +31,23 @@ abstract class BaseProvider
 
     protected function initClient()
     {
-        $this->client = new Client([
+        $config = [
             RequestOptions::TIMEOUT         => 10.0,
             RequestOptions::VERIFY          => CaBundle::getSystemCaRootBundlePath(),
             RequestOptions::HEADERS         => [
-                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36 Edg/96.0.1054.53',
-                'Accept-Encoding' => 'gzip, deflate, br',
-                'Accept-Language' => 'en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
-            ] + $this->defaultHeaders(),
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36 Edg/96.0.1054.53',
+                    'Accept-Encoding' => 'gzip, deflate, br',
+                    'Accept-Language' => 'en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
+                ] + $this->defaultHeaders(),
             RequestOptions::DEBUG           => $this->debug,
             RequestOptions::ALLOW_REDIRECTS => [
                 'max' => 3,
             ],
-            RequestOptions::PROXY => 'http://192.168.10.1:10901',
-        ]);
+        ];
+        if ($proxy = \Env\env('HTTP_PROXY')) {
+            $config[RequestOptions::PROXY] = $proxy;
+        }
+        $this->client = new Client($config);
     }
 
     abstract public static function getType(): string;
@@ -70,6 +73,7 @@ abstract class BaseProvider
     {
         $store = SynonymStoreModel::queryWord(static::getType(), $word);
         if (!empty($store)) {
+            // todo 收录完整的查询数据
             $mapper = new JsonMapper();
             $mapper->bIgnoreVisibility = true;
             $output = $mapper->mapArray($store->store->words, [], WordText::class);
