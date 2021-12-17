@@ -9,6 +9,7 @@ use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use Symfony\Component\DomCrawler\Crawler;
+use function array_unique;
 use function date_create_from_format;
 use function dump;
 use function str_contains;
@@ -43,10 +44,12 @@ class ReversoProvider extends BaseProvider
     protected function analyze(StreamInterface $body): array
     {
         $crawler = new Crawler($body->getContents());
-        return $crawler
+        $words = $crawler
             ->filter('ul.word-box > li > a.synonym')
             ->each(function (Crawler $node) {
                 return new WordText($node->innerText(), str_contains($node->attr('class'), 'relevant'));
             });
+
+        return array_unique($words);
     }
 }

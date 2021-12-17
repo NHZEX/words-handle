@@ -7,6 +7,7 @@ use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use Symfony\Component\DomCrawler\Crawler;
+use function array_unique;
 use function dump;
 use function urlencode;
 use function var_dump;
@@ -84,7 +85,7 @@ class VocabularyProvider extends BaseProvider
             }
             $this->definitions[] = $def;
         }
-        return $words;
+        return array_unique($words);
     }
 
     /**

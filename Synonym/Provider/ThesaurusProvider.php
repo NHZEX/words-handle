@@ -7,6 +7,7 @@ use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use Symfony\Component\DomCrawler\Crawler;
+use function array_unique;
 use function trim;
 use function urlencode;
 
@@ -39,7 +40,7 @@ class ThesaurusProvider extends BaseProvider
         $firstClass = null;
         $changeCount = 0;
         $crawler = new Crawler($body->getContents());
-        return $crawler
+        $words = $crawler
             ->filter('section.MainContentContainer > section > div > div > ul > li > a')
             ->each(static function (Crawler $node) use (&$firstClass, &$changeCount) {
                 $class = $node->attr('class');
@@ -50,5 +51,6 @@ class ThesaurusProvider extends BaseProvider
                 }
                 return new WordText($node->text(), $changeCount === 0);
             });
+        return array_unique($words);
     }
 }

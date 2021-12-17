@@ -28,18 +28,17 @@ class SynonymService
         ];
     }
 
-    protected function query(string $provider, string $word)
+    protected function query(string $provider, string $word): array
     {
         return $this->provider[$provider]->query($word);
     }
 
-    public function queryAll(string $word)
+    public function queryAll(string $word): array
     {
         $queryAll = [];
         foreach ($this->provider as $name => $provider) {
             $queryAll[$name] = $provider->queryAsync($word);
         }
-        $results = Utils::unwrap($queryAll);
-        return $results;
+        return Utils::unwrap($queryAll);
     }
 }
