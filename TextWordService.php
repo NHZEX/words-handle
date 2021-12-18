@@ -106,6 +106,18 @@ class TextWordService
         }
     }
 
+    public function wordTypeGuess(iterable $items): \Generator
+    {
+        foreach ($items as $item) {
+            $isWord = preg_match('/^[\p{L}\p{Pd}]+$/u', $item) > 0;
+            yield [
+                'type' => $isWord ? TextWordService::TYPE_WORD : TextWordService::TYPE_SYMBOL,
+                'stat' => null,
+                'text' => $item,
+            ];
+        }
+    }
+
     public function synonym(string $word): array
     {
         return SynonymService::instance()->queryAllWithAggregation($word);
