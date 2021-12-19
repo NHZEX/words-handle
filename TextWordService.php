@@ -79,30 +79,36 @@ class TextWordService
         }
     }
 
-    public function filter(iterable $items): \Generator
+    public function filter(iterable $items, $onlyError = false): \Generator
     {
         foreach ($items as $item) {
             ['type' => $type, 'stat' => $stat, 'text' => $text] = $item;
 
             if (self::TYPE_WORD !== $type) {
-                yield $item;
+                if (!$onlyError) {
+                    yield $item;
+                }
                 continue;
             }
 
             $word = AmazonWordDictModel::findWord($text);
 
             if (empty($word)) {
-                yield $item;
+                if (!$onlyError) {
+                    yield $item;
+                }
                 continue;
             }
 
             if ($word->isBad()) {
                 $item['stat'] = WordFilterEnum::_BAD;
+                yield $item;
             } elseif ($word->isWarn()) {
                 $item['stat'] = WordFilterEnum::_WARN;
+                yield $item;
+            } else if (!$onlyError) {
+                yield $item;
             }
-
-            yield $item;
         }
     }
 
