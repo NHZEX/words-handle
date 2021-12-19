@@ -5,7 +5,6 @@ namespace app\Service\TextWord;
 use app\Service\TextWord\Synonym\Provider\BaseProvider;
 use app\Service\TextWord\Synonym\Provider\ReversoProvider;
 use app\Service\TextWord\Synonym\Provider\ThesaurusProvider;
-use app\Service\TextWord\Synonym\Provider\VocabularyProvider;
 use app\Service\TextWord\Synonym\WordText;
 use GuzzleHttp\Promise\Utils;
 use think\Container;
@@ -30,8 +29,8 @@ class SynonymService
     {
         $this->provider = [
             ReversoProvider::getType()    => new ReversoProvider(),
-            VocabularyProvider::getType() => new VocabularyProvider(),
             ThesaurusProvider::getType()  => new ThesaurusProvider(),
+            // VocabularyProvider::getType() => new VocabularyProvider(),
         ];
     }
 

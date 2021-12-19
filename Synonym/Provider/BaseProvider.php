@@ -85,6 +85,10 @@ abstract class BaseProvider
                 return $this->analyze($body);
             })
             ->then(function (array $words) use ($word) {
+                if (empty($word)) {
+                    // todo redis 缓冲
+                    return $words;
+                }
                 SynonymStoreModel::writeWord(static::getType(), $word, [
                     'ver' => 1,
                     'words' => $words,
