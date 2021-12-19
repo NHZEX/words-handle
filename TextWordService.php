@@ -11,6 +11,7 @@ use function explode;
 use function htmlspecialchars_decode;
 use function implode;
 use function in_array;
+use function log_debug;
 use function preg_match_all;
 use function preg_replace;
 use function str_replace;
@@ -109,6 +110,7 @@ class TextWordService
         $bufferWords = [];
         foreach ($items as $item) {
             ['type' => $type, 'text' => $text] = $item;
+            log_debug("[$type] $text");
 
             if (self::TYPE_LF === $type
                 || (
@@ -156,6 +158,9 @@ class TextWordService
                     'stat' => $stat,
                 ];
             }
+        }
+        if (!empty($bufferWords)) {
+            yield from $bufferWords;
         }
     }
 
