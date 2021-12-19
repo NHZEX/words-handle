@@ -11,7 +11,6 @@ use function explode;
 use function htmlspecialchars_decode;
 use function implode;
 use function in_array;
-use function log_debug;
 use function preg_match_all;
 use function preg_replace;
 use function str_replace;
@@ -89,6 +88,18 @@ class TextWordService
                 'text' => $word,
             ];
         }
+        if (strlen($text) > $lastPoint) {
+            $str = substr($text, $lastPoint);
+            if (self::SYMBOL_LF === $str) {
+                yield [
+                    'type' => self::TYPE_LF,
+                    'stat' => null,
+                    'text' => "\n",
+                ];
+            } else {
+                yield from self::wordTypeGuess([$str]);
+            }
+        }
     }
 
     public function filterOnlyInvalid(iterable $items): \Generator
@@ -110,7 +121,6 @@ class TextWordService
         $bufferWords = [];
         foreach ($items as $item) {
             ['type' => $type, 'text' => $text] = $item;
-            log_debug("[$type] $text");
 
             if (self::TYPE_LF === $type
                 || (
