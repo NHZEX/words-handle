@@ -4,9 +4,13 @@ namespace app\Service\TextWord;
 
 use app\Enum\WordFilterEnum;
 use app\Model\AmazonWordDictModel;
+use function array_map;
+use function array_shift;
 use function count;
 use function explode;
 use function htmlspecialchars_decode;
+use function implode;
+use function in_array;
 use function preg_match_all;
 use function preg_replace;
 use function str_replace;
@@ -21,6 +25,9 @@ class TextWordService
     public const TYPE_WORD = 'w';
     public const TYPE_SYMBOL = 'o';
     public const TYPE_LF = 'lf';
+
+    protected const SYMBOL_LINK = [];
+    protected const SYMBOL_CUT = [',', '.', '?', '!', ';'];
 
     public function clean(string $text): string
     {
@@ -79,37 +86,91 @@ class TextWordService
         }
     }
 
-    public function filter(iterable $items, $onlyError = false): \Generator
+    public function filterOnlyInvalid(iterable $items): \Generator
     {
-        foreach ($items as $item) {
-            ['type' => $type, 'stat' => $stat, 'text' => $text] = $item;
+        foreach ($this->filter($items) as $item) {
+            ['type' => $type, 'stat' => $stat] = $item;
 
             if (self::TYPE_WORD !== $type) {
-                if (!$onlyError) {
-                    yield $item;
-                }
                 continue;
             }
-
-            $word = AmazonWordDictModel::findWord($text);
-
-            if (empty($word)) {
-                if (!$onlyError) {
-                    yield $item;
-                }
-                continue;
-            }
-
-            if ($word->isBad()) {
-                $item['stat'] = WordFilterEnum::_BAD;
-                yield $item;
-            } elseif ($word->isWarn()) {
-                $item['stat'] = WordFilterEnum::_WARN;
-                yield $item;
-            } else if (!$onlyError) {
+            if ($stat > 0) {
                 yield $item;
             }
         }
+    }
+
+    public function filter(iterable $items): \Generator
+    {
+        $bufferWords = [];
+        foreach ($items as $item) {
+            ['type' => $type, 'text' => $text] = $item;
+
+            if (self::TYPE_LF === $type
+                || (
+                    self::TYPE_SYMBOL === $type
+                    && in_array($text, self::SYMBOL_CUT)
+                )
+            ) {
+                yield from $bufferWords;
+                yield $item;
+                $bufferWords = [];
+                continue;
+            }
+
+            $bufferWords[] = $item;
+            $bufferStr = implode(' ', array_map(fn($v) => $v['text'], $bufferWords));
+
+            $queryText = AmazonWordDictModel::buildQueryString($bufferStr);
+            $words = AmazonWordDictModel::findPhraseRaw($queryText, 2);
+            if ($words->isEmpty()) {
+                // 无有效匹配
+                yield array_shift($bufferWords);
+                continue;
+            } elseif ($words->count() > 1) {
+                // 存在多个匹配 可能可以优化
+                continue;
+            } elseif ($queryText !== $words[0]['query']) {
+                // 等于1且字符串非全等
+                continue;
+            } else {
+                // 等于1且字符串全等
+                $model = $words[0];
+                $text = $this->wordsCombine($bufferWords);
+                $item = [
+                    'type' => self::TYPE_WORD,
+                    'text' => $text,
+                ];
+                $bufferWords = [];
+            }
+
+            if ($model->isBad()) {
+                $item['stat'] = WordFilterEnum::_BAD;
+            } elseif ($model->isWarn()) {
+                $item['stat'] = WordFilterEnum::_WARN;
+            }
+
+            yield $item;
+        }
+    }
+
+    public function wordsCombine(iterable $items): string
+    {
+        $text = '';
+        $len = count($items);
+        foreach ($items as $i => $word) {
+            ['text' => $wt] = $word;
+            if ($i === $len - 1) {
+                $text .= $wt;
+            } elseif (self::TYPE_SYMBOL === $word['type'] && !in_array($wt, self::SYMBOL_CUT)) {
+                $text .= $wt;
+            } elseif (self::TYPE_SYMBOL === $items[$i + 1]['type'] && !in_array($wt, self::SYMBOL_CUT)) {
+                $text .= $wt;
+            } else {
+                $text .= $wt . ' ';
+            }
+        }
+        return $text;
     }
 
     public function wordTypeGuess(iterable $items): \Generator
