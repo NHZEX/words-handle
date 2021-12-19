@@ -22,12 +22,15 @@ use function Zxin\Str\str_fullwidth_to_ascii;
 
 class TextWordService
 {
-    public const TYPE_WORD = 'w';
+    public const TYPE_WORD   = 'w';
     public const TYPE_SYMBOL = 'o';
-    public const TYPE_LF = 'lf';
+    public const TYPE_LF     = 'lf';
 
-    protected const SYMBOL_LINK = [];
-    protected const SYMBOL_CUT = [',', '.', '?', '!', ';'];
+    protected const SYMBOL_LINK       = ['/', '-', '′', '—'];
+    protected const SYMBOL_BRACKETS_A = ['(', '[', '{'];
+    protected const SYMBOL_BRACKETS_B = [')', ']', '}'];
+    protected const SYMBOL_CUT        = [',', '.', '?', '!', ';'];
+    protected const SYMBOL_SEG        = [':'];
 
     public function clean(string $text): string
     {
@@ -119,10 +122,10 @@ class TextWordService
             }
 
             $bufferWords[] = $item;
-            $bufferStr = implode(' ', array_map(fn($v) => $v['text'], $bufferWords));
+            $bufferStr     = implode(' ', array_map(fn($v) => $v['text'], $bufferWords));
 
             $queryText = AmazonWordDictModel::buildQueryString($bufferStr);
-            $words = AmazonWordDictModel::findPhraseRaw($queryText, 2);
+            $words     = AmazonWordDictModel::findPhraseRaw($queryText, 2);
             if ($words->isEmpty()) {
                 // 无有效匹配
                 yield array_shift($bufferWords);
@@ -135,9 +138,9 @@ class TextWordService
                 continue;
             } else {
                 // 等于1且字符串全等
-                $model = $words[0];
-                $text = $this->wordsCombine($bufferWords);
-                $item = [
+                $model       = $words[0];
+                $text        = $this->wordsCombine($bufferWords);
+                $item        = [
                     'type' => self::TYPE_WORD,
                     'text' => $text,
                 ];
@@ -156,15 +159,17 @@ class TextWordService
 
     public function wordsCombine(iterable $items): string
     {
+        // todo 特殊处理 引号，括号
         $text = '';
-        $len = count($items);
+        $len  = count($items);
         foreach ($items as $i => $word) {
             ['text' => $wt] = $word;
             if ($i === $len - 1) {
                 $text .= $wt;
-            } elseif (self::TYPE_SYMBOL === $word['type'] && !in_array($wt, self::SYMBOL_CUT)) {
+            } elseif (self::TYPE_SYMBOL === $word['type'] && in_array($wt, self::SYMBOL_LINK)) {
                 $text .= $wt;
-            } elseif (self::TYPE_SYMBOL === $items[$i + 1]['type'] && !in_array($wt, self::SYMBOL_CUT)) {
+            } elseif (self::TYPE_SYMBOL === $items[$i + 1]['type']) {
+                // 解决：引号、连接符
                 $text .= $wt;
             } else {
                 $text .= $wt . ' ';
