@@ -168,6 +168,9 @@ class TextWordService
             ['text' => $wt] = $word;
             if ($i === $len - 1) {
                 $text .= $wt;
+            } elseif (self::TYPE_LF === $word['type'] || self::TYPE_LF === $items[$i + 1]['type']) {
+                // 解决：换行
+                $text .= $wt;
             } elseif (self::TYPE_SYMBOL === $word['type'] && in_array($wt, self::SYMBOL_LINK)) {
                 $text .= $wt;
             } elseif (self::TYPE_SYMBOL === $items[$i + 1]['type']) {
