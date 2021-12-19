@@ -31,6 +31,7 @@ class TextWordService
     protected const SYMBOL_BRACKETS_B = [')', ']', '}'];
     protected const SYMBOL_CUT        = [',', '.', '?', '!', ';'];
     protected const SYMBOL_SEG        = [':'];
+    protected const SYMBOL_LF         = "\n";
 
     public function clean(string $text): string
     {
@@ -112,7 +113,7 @@ class TextWordService
             if (self::TYPE_LF === $type
                 || (
                     self::TYPE_SYMBOL === $type
-                    && in_array($text, self::SYMBOL_CUT)
+                    && (in_array($text, self::SYMBOL_CUT) || in_array($text, self::SYMBOL_SEG))
                 )
             ) {
                 yield from $bufferWords;
@@ -140,20 +141,21 @@ class TextWordService
                 // 等于1且字符串全等
                 $model       = $words[0];
                 $text        = $this->wordsCombine($bufferWords);
-                $item        = [
+                $bufferWords = [];
+
+                if ($model->isBad()) {
+                    $stat = WordFilterEnum::_BAD;
+                } elseif ($model->isWarn()) {
+                    $stat = WordFilterEnum::_WARN;
+                } else {
+                    $stat = 0;
+                }
+                yield [
                     'type' => self::TYPE_WORD,
                     'text' => $text,
+                    'stat' => $stat,
                 ];
-                $bufferWords = [];
             }
-
-            if ($model->isBad()) {
-                $item['stat'] = WordFilterEnum::_BAD;
-            } elseif ($model->isWarn()) {
-                $item['stat'] = WordFilterEnum::_WARN;
-            }
-
-            yield $item;
         }
     }
 
