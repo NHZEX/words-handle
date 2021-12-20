@@ -134,7 +134,7 @@ class TextWordService
                     'stat' => null,
                     'text' => "\n",
                 ];
-            } else {
+            } elseif ('' !== trim($str)) {
                 yield from self::wordTypeGuess([$str]);
             }
         }
