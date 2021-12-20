@@ -64,6 +64,7 @@ class TextWordService
             '’',
             '“',
             '“',
+            '≈',
         ], [
             ' ',
             ' ',
@@ -72,6 +73,7 @@ class TextWordService
             '\'',
             '"',
             '"',
+            '=',
         ], $input);
     }
 
