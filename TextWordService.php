@@ -215,7 +215,6 @@ class TextWordService
 
     public function wordsCombine(iterable $items): string
     {
-        // todo 特殊处理 引号，括号
         $text = '';
         $len  = count($items);
         foreach ($items as $i => $word) {
@@ -229,6 +228,10 @@ class TextWordService
                 $text .= $wt;
             } elseif (self::TYPE_SYMBOL === $word['type'] && in_array($wt, self::SYMBOL_CUT)) {
                 $text .= $wt . ' ';
+            } elseif (self::TYPE_SYMBOL === $word['type'] && in_array($wt, self::SYMBOL_BRACKETS_A)) {
+                $text .= ' ' . $wt;
+            } elseif (self::TYPE_SYMBOL === $word['type'] && in_array($wt, self::SYMBOL_BRACKETS_B)) {
+                $text .=  $wt . ' ';
             } elseif (self::TYPE_SYMBOL === $items[$i + 1]['type']) {
                 // 解决：引号、连接符
                 $text .= $wt;
