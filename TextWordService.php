@@ -31,7 +31,7 @@ class TextWordService
     public const TYPE_LF     = 'lf';
 
     // 连接符，与字符结合没有空格
-    protected const SYMBOL_LINK       = ['/', '-', '′', '—', '=', '*', '≈', '°'];
+    protected const SYMBOL_LINK       = ['/', '′', '-', '–', '—', '=', '*', '≈', '°'];
     // 各种括号
     protected const SYMBOL_BRACKETS_A = ['(', '[', '{'];
     protected const SYMBOL_BRACKETS_B = [')', ']', '}'];
