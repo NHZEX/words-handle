@@ -29,11 +29,16 @@ class TextWordService
     public const TYPE_SYMBOL = 'o';
     public const TYPE_LF     = 'lf';
 
-    protected const SYMBOL_LINK       = ['/', '-', '′', '—', '=', '*', '≈'];
+    // 连接符，与字符结合没有空格
+    protected const SYMBOL_LINK       = ['/', '-', '′', '—', '=', '*', '≈', '°'];
+    // 各种括号
     protected const SYMBOL_BRACKETS_A = ['(', '[', '{'];
     protected const SYMBOL_BRACKETS_B = [')', ']', '}'];
+    // 分割符，与字符结合有空格
     protected const SYMBOL_CUT        = [',', '.', '?', '!', ';'];
+    // 分割符，切断文本分析
     protected const SYMBOL_SEG        = [':'];
+    // 换行符，切断文本分析
     protected const SYMBOL_LF         = "\n";
 
     public function clean(string $text): string
