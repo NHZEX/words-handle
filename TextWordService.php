@@ -6,10 +6,12 @@ use app\Enum\WordFilterEnum;
 use app\Model\AmazonWordDictModel;
 use function array_map;
 use function array_shift;
+use function bin2hex;
 use function count;
 use function htmlspecialchars_decode;
 use function implode;
 use function in_array;
+use function mb_check_encoding;
 use function preg_match;
 use function preg_match_all;
 use function preg_replace;
@@ -38,16 +40,36 @@ class TextWordService
     {
         $output = htmlspecialchars_decode($text);
         $output = strip_tags($output);
-        $output = str_replace(['&nbsp;'], [''], $output);
         /**$output = preg_replace('#<br\s?/?>#', "\n", $output);**/
-        $output = preg_replace("/\n{2,}/u", "\n\n", $output);
-        return str_fullwidth_to_ascii($output);
+        $output = $this->filterSymbol(str_fullwidth_to_ascii($output));
+        return preg_replace("/\n{2,}/u", "\n\n", $output);
+    }
+
+    public function filterSymbol(string $input): string
+    {
+        return str_replace([
+            '&nbsp;',
+            "\xc2\xa0", // NBSP
+            '、',
+            '。',
+            '’',
+            '“',
+            '“',
+        ], [
+            ' ',
+            ' ',
+            ',',
+            '.',
+            '\'',
+            '"',
+            '"',
+        ], $input);
     }
 
     public function slice(string $text): ?\Generator
     {
         $count = preg_match_all(
-            "/(?<w>\p{L&}+)|(?<s>\p{P})|(?<n>\p{N}+(?:\.\p{N}+)?)|(?<lf>\n)/",
+            "/(?<w>[\p{Ll}\p{Lu}\p{Lt}]+)|(?<s>[\p{P}\p{S}])|(?<n>\p{N}+(?:\.\p{N}+)?)|(?<lf>\n)/u",
             $text,
             $matches,
             PREG_OFFSET_CAPTURE
@@ -70,7 +92,8 @@ class TextWordService
                 // 没有捕获
                 $unCaptured = substr($text, $lastPoint, $point - $lastPoint);
                 if ('' !== trim($unCaptured)) {
-                    throw new \UnexpectedValueException("无法处理：未知捕获({$unCaptured})");
+                    $unCaptured  = mb_check_encoding($unCaptured, 'utf8') ? $unCaptured : ('0x' . bin2hex($unCaptured));
+                    throw new \UnexpectedValueException("无法处理：未知捕获 $point:({$unCaptured})");
                 }
             }
 
@@ -100,7 +123,7 @@ class TextWordService
                     'text' => "\n",
                 ];
             } else {
-                throw new \UnexpectedValueException("无法处理：未知分支({$str})");
+                throw new \UnexpectedValueException("无法处理：未知分支 $point:({$str})");
             }
         }
         if (strlen($text) > $lastPoint) {
