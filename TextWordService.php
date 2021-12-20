@@ -43,6 +43,8 @@ class TextWordService
     // 换行符，切断文本分析
     protected const SYMBOL_LF         = "\n";
 
+    protected bool $_cxtCombineQuotationHead = false;
+
     public function clean(string $text): string
     {
         $output = htmlspecialchars_decode($text);
@@ -222,10 +224,11 @@ class TextWordService
 
     public function wordsCombine(iterable $items, bool $forceFirstLetterUpper = false): string
     {
-        $quotationHead = false;
+        $this->_cxtCombineQuotationHead = false;
         $text = '';
         $len  = count($items);
         foreach ($items as $i => $word) {
+            /** @var string $wt */
             ['text' => $wt, 'type' => $type] = $word;
             if ($forceFirstLetterUpper && self::TYPE_WORD === $type) {
                 $wt[0] = strtoupper($wt[0]);
@@ -235,21 +238,13 @@ class TextWordService
             } elseif (self::TYPE_LF === $type || self::TYPE_LF === $items[$i + 1]['type']) {
                 // 解决：换行
                 $text .= $wt;
-            } elseif (self::TYPE_SYMBOL === $type && in_array($wt, self::SYMBOL_LINK)) {
-                $text .= $wt;
-            } elseif (self::TYPE_SYMBOL === $type && in_array($wt, self::SYMBOL_CUT)) {
-                $text .= $wt . ' ';
-            } elseif (self::TYPE_SYMBOL === $type && in_array($wt, self::SYMBOL_BRACKETS_A)) {
-                $text .= ' ' . $wt;
-            } elseif (self::TYPE_SYMBOL === $type && in_array($wt, self::SYMBOL_BRACKETS_B)) {
-                $text .= $wt . ' ';
-            } elseif (self::TYPE_SYMBOL === $type && $wt === self::SYMBOL_QUOTATION) {
-                if ($quotationHead) {
-                    $text .= $wt;
-                    $quotationHead = false;
-                } else {
+            } elseif (self::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($type, $wt))) {
+                if ('L' === $filling) {
                     $text .= ' ' . $wt;
-                    $quotationHead = true;
+                } elseif ('R' === $filling) {
+                    $text .= $wt . ' ';
+                } else {
+                    $text .= $wt;
                 }
             } elseif (self::TYPE_SYMBOL === $items[$i + 1]['type']) {
                 // 解决：引号、连接符
@@ -259,6 +254,29 @@ class TextWordService
             }
         }
         return $text;
+    }
+
+    public function symbolSpaceAnalyze(string $type, string $text): ?string
+    {
+        if (self::TYPE_SYMBOL === $type && in_array($text, self::SYMBOL_LINK)) {
+            return '';
+        } elseif (self::TYPE_SYMBOL === $type && in_array($text, self::SYMBOL_CUT)) {
+            return 'R';
+        } elseif (self::TYPE_SYMBOL === $type && in_array($text, self::SYMBOL_BRACKETS_A)) {
+            return 'L';
+        } elseif (self::TYPE_SYMBOL === $type && in_array($text, self::SYMBOL_BRACKETS_B)) {
+            return 'R';
+        } elseif (self::TYPE_SYMBOL === $type && $text === self::SYMBOL_QUOTATION) {
+            if ($this->_cxtCombineQuotationHead) {
+                $this->_cxtCombineQuotationHead = false;
+                return '';
+            } else {
+                $this->_cxtCombineQuotationHead = true;
+                return 'L';
+            }
+        } else {
+            return null;
+        }
     }
 
     public function wordTypeGuess(iterable $items): \Generator
