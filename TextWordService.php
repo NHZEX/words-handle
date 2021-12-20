@@ -11,6 +11,7 @@ use function count;
 use function htmlspecialchars_decode;
 use function implode;
 use function in_array;
+use function is_numeric;
 use function mb_check_encoding;
 use function preg_match;
 use function preg_match_all;
@@ -255,6 +256,8 @@ class TextWordService
                 }
             } elseif (self::TYPE_SYMBOL === $items[$i + 1]['type']) {
                 // 解决：引号、连接符
+                $text .= $wt;
+            } elseif (is_numeric($wt) && SymbolDefinition::isSymbol($items[$i + 1]['text'])) {
                 $text .= $wt;
             } else {
                 $text .= $wt . ' ';
