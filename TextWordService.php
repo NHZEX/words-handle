@@ -7,10 +7,10 @@ use app\Model\AmazonWordDictModel;
 use function array_map;
 use function array_shift;
 use function count;
-use function explode;
 use function htmlspecialchars_decode;
 use function implode;
 use function in_array;
+use function preg_match;
 use function preg_match_all;
 use function preg_replace;
 use function str_replace;
@@ -23,6 +23,7 @@ use function Zxin\Str\str_fullwidth_to_ascii;
 class TextWordService
 {
     public const TYPE_WORD   = 'w';
+    public const TYPE_NUMBER = 'n';
     public const TYPE_SYMBOL = 'o';
     public const TYPE_LF     = 'lf';
 
@@ -45,48 +46,62 @@ class TextWordService
 
     public function slice(string $text): ?\Generator
     {
-        $count = preg_match_all("/[a-z]+/i", $text, $matches, PREG_OFFSET_CAPTURE);
+        $count = preg_match_all(
+            "/(?<w>\p{L&}+)|(?<s>\p{P})|(?<n>\p{N}+(?:\.\p{N}+)?)|(?<lf>\n)/",
+            $text,
+            $matches,
+            PREG_OFFSET_CAPTURE
+        );
 
         if (empty($count)) {
             return null;
         }
 
         $lastPoint = 0;
-        foreach ($matches[0] as $match) {
-            [$word, $point] = $match;
-            $len = strlen($word);
+        $matchLen = count($matches[0]);
+        [0 => $all, 1 => $word, 2 => $symbol, 3 => $number, 4 => $lf] = $matches;
+        for ($i = 0; $i < $matchLen; $i++) {
+            [$str, $point] = $all[$i];
+            if (-1 === $point) {
+                throw new \UnexpectedValueException('无法处理：超出范围 -1');
+            }
+            $strLen = strlen($str);
             if ($point > $lastPoint) {
-                $word2 = substr($text, $lastPoint, $point - $lastPoint);
-                $word2 = trim($word2, " \t\r\0\x0B");
-                if (!empty($word2)) {
-                    $t = explode("\n", $word2);
-                    if (count($t) > 1 && $t[0] === '') {
-                        // 移除切割产生的多余换行
-                        unset($t[0]);
-                    }
-                    foreach ($t as $value) {
-                        if ('' === $value) {
-                            yield [
-                                'type' => self::TYPE_LF,
-                                'stat' => null,
-                                'text' => "\n",
-                            ];
-                        } else {
-                            yield [
-                                'type' => self::TYPE_SYMBOL,
-                                'stat' => null,
-                                'text' => $value,
-                            ];
-                        }
-                    }
+                // 没有捕获
+                $unCaptured = substr($text, $lastPoint, $point - $lastPoint);
+                if ('' !== trim($unCaptured)) {
+                    throw new \UnexpectedValueException("无法处理：未知捕获({$unCaptured})");
                 }
             }
-            $lastPoint = $point + $len;
-            yield [
-                'type' => self::TYPE_WORD,
-                'stat' => null,
-                'text' => $word,
-            ];
+
+            $lastPoint = $point + $strLen;
+            if (-1 !== $word[$i][1]) {
+                yield [
+                    'type' => self::TYPE_WORD,
+                    'stat' => null,
+                    'text' => $str,
+                ];
+            } elseif (-1 !== $symbol[$i][1]) {
+                yield [
+                    'type' => self::TYPE_SYMBOL,
+                    'stat' => null,
+                    'text' => $str,
+                ];
+            } elseif (-1 !== $number[$i][1]) {
+                yield [
+                    'type' => self::TYPE_NUMBER,
+                    'stat' => null,
+                    'text' => $str,
+                ];
+            } elseif (-1 !== $lf[$i][1]) {
+                yield [
+                    'type' => self::TYPE_LF,
+                    'stat' => null,
+                    'text' => "\n",
+                ];
+            } else {
+                throw new \UnexpectedValueException("无法处理：未知分支({$str})");
+            }
         }
         if (strlen($text) > $lastPoint) {
             $str = substr($text, $lastPoint);
@@ -123,6 +138,7 @@ class TextWordService
             ['type' => $type, 'text' => $text] = $item;
 
             if (self::TYPE_LF === $type
+                || self::TYPE_NUMBER === $type
                 || (
                     self::TYPE_SYMBOL === $type
                     && (in_array($text, self::SYMBOL_CUT) || in_array($text, self::SYMBOL_SEG))
@@ -202,8 +218,15 @@ class TextWordService
     {
         foreach ($items as $item) {
             $isWord = preg_match('/^[\p{L}\p{Pd}\p{Zs}]+$/u', $item) > 0;
+            if ($isWord) {
+                $type = TextWordService::TYPE_WORD;
+            } elseif (preg_match('/^[\p{N}.]+$/u', $item) > 0) {
+                $type = TextWordService::TYPE_NUMBER;
+            } else {
+                $type = TextWordService::TYPE_SYMBOL;
+            }
             yield [
-                'type' => $isWord ? TextWordService::TYPE_WORD : TextWordService::TYPE_SYMBOL,
+                'type' => $type,
                 'stat' => null,
                 'text' => $item,
             ];
