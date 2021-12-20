@@ -34,6 +34,7 @@ class TextWordService
     // 各种括号
     protected const SYMBOL_BRACKETS_A = ['(', '[', '{'];
     protected const SYMBOL_BRACKETS_B = [')', ']', '}'];
+    protected const SYMBOL_QUOTATION  = '"';
     // 分割符，与字符结合有空格
     protected const SYMBOL_CUT        = [',', '.', '?', '!', ';'];
     // 分割符，切断文本分析
@@ -220,6 +221,7 @@ class TextWordService
 
     public function wordsCombine(iterable $items): string
     {
+        $quotationHead = false;
         $text = '';
         $len  = count($items);
         foreach ($items as $i => $word) {
@@ -236,7 +238,15 @@ class TextWordService
             } elseif (self::TYPE_SYMBOL === $word['type'] && in_array($wt, self::SYMBOL_BRACKETS_A)) {
                 $text .= ' ' . $wt;
             } elseif (self::TYPE_SYMBOL === $word['type'] && in_array($wt, self::SYMBOL_BRACKETS_B)) {
-                $text .=  $wt . ' ';
+                $text .= $wt . ' ';
+            } elseif (self::TYPE_SYMBOL === $word['type'] && $wt === self::SYMBOL_QUOTATION) {
+                if ($quotationHead) {
+                    $text .= $wt;
+                    $quotationHead = false;
+                } else {
+                    $text .= ' ' . $wt;
+                    $quotationHead = true;
+                }
             } elseif (self::TYPE_SYMBOL === $items[$i + 1]['type']) {
                 // 解决：引号、连接符
                 $text .= $wt;
