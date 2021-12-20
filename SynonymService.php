@@ -68,9 +68,9 @@ class SynonymService
         foreach ($this->queryAll($word) as $words) {
             foreach ($words as $word) {
                 if ($word->isRelevant()) {
-                    $priority1[] = $word;
+                    $priority1[strtolower($word)] = $word;
                 } else {
-                    $priority2[] = $word;
+                    $priority2[strtolower($word)] = $word;
                 }
             }
         }
