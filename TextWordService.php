@@ -11,6 +11,7 @@ use function count;
 use function htmlspecialchars_decode;
 use function implode;
 use function in_array;
+use function log_debug;
 use function mb_check_encoding;
 use function preg_match;
 use function preg_match_all;
@@ -21,6 +22,7 @@ use function strlen;
 use function strtoupper;
 use function substr;
 use function trim;
+use function var_export;
 use function Zxin\Str\str_fullwidth_to_ascii;
 
 class TextWordService
@@ -35,7 +37,8 @@ class TextWordService
     // 各种括号
     protected const SYMBOL_BRACKETS_A = ['(', '[', '{'];
     protected const SYMBOL_BRACKETS_B = [')', ']', '}'];
-    protected const SYMBOL_QUOTATION  = '"';
+    protected const SYMBOL_QUOTE            = '"';
+    protected const SYMBOL_SINGLE_QUOTATION = '\'';
     // 分割符，与字符结合有空格
     protected const SYMBOL_CUT        = [',', '.', '?', '!', ';'];
     // 分割符，切断文本分析
@@ -44,6 +47,7 @@ class TextWordService
     protected const SYMBOL_LF         = "\n";
 
     protected bool $_cxtCombineQuotationHead = false;
+    protected bool $_cxtCombineSingleQuotationHead = false;
 
     public function clean(string $text): string
     {
@@ -61,15 +65,17 @@ class TextWordService
             "\xc2\xa0", // NBSP
             '、',
             '。',
+            '‘',
             '’',
             '“',
-            '“',
+            '”',
             '≈',
         ], [
             ' ',
             ' ',
             ',',
             '.',
+            '\'',
             '\'',
             '"',
             '"',
@@ -227,6 +233,7 @@ class TextWordService
     public function wordsCombine(iterable $items, bool $forceFirstLetterUpper = false): string
     {
         $this->_cxtCombineQuotationHead = false;
+        $this->_cxtCombineSingleQuotationHead = false;
         $text = '';
         $len  = count($items);
         foreach ($items as $i => $word) {
@@ -260,20 +267,29 @@ class TextWordService
 
     public function symbolSpaceAnalyze(string $type, string $text): ?string
     {
-        if (self::TYPE_SYMBOL === $type && in_array($text, self::SYMBOL_LINK)) {
+        if (in_array($text, self::SYMBOL_LINK)) {
             return '';
-        } elseif (self::TYPE_SYMBOL === $type && in_array($text, self::SYMBOL_CUT)) {
+        } elseif (in_array($text, self::SYMBOL_CUT)) {
             return 'R';
-        } elseif (self::TYPE_SYMBOL === $type && in_array($text, self::SYMBOL_BRACKETS_A)) {
+        } elseif (in_array($text, self::SYMBOL_BRACKETS_A)) {
             return 'L';
-        } elseif (self::TYPE_SYMBOL === $type && in_array($text, self::SYMBOL_BRACKETS_B)) {
+        } elseif (in_array($text, self::SYMBOL_BRACKETS_B)) {
             return 'R';
-        } elseif (self::TYPE_SYMBOL === $type && $text === self::SYMBOL_QUOTATION) {
+        } elseif ($text === self::SYMBOL_QUOTE) {
+            log_debug(var_export($this->_cxtCombineQuotationHead, true));
             if ($this->_cxtCombineQuotationHead) {
                 $this->_cxtCombineQuotationHead = false;
-                return '';
+                return 'R';
             } else {
                 $this->_cxtCombineQuotationHead = true;
+                return 'L';
+            }
+        } elseif ($text === self::SYMBOL_SINGLE_QUOTATION) {
+            if ($this->_cxtCombineSingleQuotationHead) {
+                $this->_cxtCombineSingleQuotationHead = false;
+                return 'R';
+            } else {
+                $this->_cxtCombineSingleQuotationHead = true;
                 return 'L';
             }
         } else {
