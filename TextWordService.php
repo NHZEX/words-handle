@@ -29,7 +29,7 @@ class TextWordService
     public const TYPE_SYMBOL = 'o';
     public const TYPE_LF     = 'lf';
 
-    protected const SYMBOL_LINK       = ['/', '-', '′', '—'];
+    protected const SYMBOL_LINK       = ['/', '-', '′', '—', '=', '*', '≈'];
     protected const SYMBOL_BRACKETS_A = ['(', '[', '{'];
     protected const SYMBOL_BRACKETS_B = [')', ']', '}'];
     protected const SYMBOL_CUT        = [',', '.', '?', '!', ';'];
@@ -227,6 +227,8 @@ class TextWordService
                 $text .= $wt;
             } elseif (self::TYPE_SYMBOL === $word['type'] && in_array($wt, self::SYMBOL_LINK)) {
                 $text .= $wt;
+            } elseif (self::TYPE_SYMBOL === $word['type'] && in_array($wt, self::SYMBOL_CUT)) {
+                $text .= $wt . ' ';
             } elseif (self::TYPE_SYMBOL === $items[$i + 1]['type']) {
                 // 解决：引号、连接符
                 $text .= $wt;
