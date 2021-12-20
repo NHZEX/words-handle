@@ -246,7 +246,7 @@ class TextWordService
             } elseif (self::TYPE_LF === $type || self::TYPE_LF === $items[$i + 1]['type']) {
                 // 解决：换行
                 $text .= $wt;
-            } elseif (self::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($type, $wt))) {
+            } elseif (self::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($wt))) {
                 if ('L' === $filling) {
                     $text .= ' ' . $wt;
                 } elseif ('R' === $filling) {
@@ -266,7 +266,7 @@ class TextWordService
         return $text;
     }
 
-    public function symbolSpaceAnalyze(string $type, string $text): ?string
+    public function symbolSpaceAnalyze(string $text): ?string
     {
         if (in_array($text, self::SYMBOL_LINK)) {
             return '';
