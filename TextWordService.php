@@ -18,6 +18,7 @@ use function preg_replace;
 use function str_replace;
 use function strip_tags;
 use function strlen;
+use function strtoupper;
 use function substr;
 use function trim;
 use function Zxin\Str\str_fullwidth_to_ascii;
@@ -219,27 +220,30 @@ class TextWordService
         }
     }
 
-    public function wordsCombine(iterable $items): string
+    public function wordsCombine(iterable $items, bool $forceFirstLetterUpper = false): string
     {
         $quotationHead = false;
         $text = '';
         $len  = count($items);
         foreach ($items as $i => $word) {
-            ['text' => $wt] = $word;
+            ['text' => $wt, 'type' => $type] = $word;
+            if ($forceFirstLetterUpper && self::TYPE_WORD === $type) {
+                $wt[0] = strtoupper($wt[0]);
+            }
             if ($i === $len - 1) {
                 $text .= $wt;
-            } elseif (self::TYPE_LF === $word['type'] || self::TYPE_LF === $items[$i + 1]['type']) {
+            } elseif (self::TYPE_LF === $type || self::TYPE_LF === $items[$i + 1]['type']) {
                 // 解决：换行
                 $text .= $wt;
-            } elseif (self::TYPE_SYMBOL === $word['type'] && in_array($wt, self::SYMBOL_LINK)) {
+            } elseif (self::TYPE_SYMBOL === $type && in_array($wt, self::SYMBOL_LINK)) {
                 $text .= $wt;
-            } elseif (self::TYPE_SYMBOL === $word['type'] && in_array($wt, self::SYMBOL_CUT)) {
+            } elseif (self::TYPE_SYMBOL === $type && in_array($wt, self::SYMBOL_CUT)) {
                 $text .= $wt . ' ';
-            } elseif (self::TYPE_SYMBOL === $word['type'] && in_array($wt, self::SYMBOL_BRACKETS_A)) {
+            } elseif (self::TYPE_SYMBOL === $type && in_array($wt, self::SYMBOL_BRACKETS_A)) {
                 $text .= ' ' . $wt;
-            } elseif (self::TYPE_SYMBOL === $word['type'] && in_array($wt, self::SYMBOL_BRACKETS_B)) {
+            } elseif (self::TYPE_SYMBOL === $type && in_array($wt, self::SYMBOL_BRACKETS_B)) {
                 $text .= $wt . ' ';
-            } elseif (self::TYPE_SYMBOL === $word['type'] && $wt === self::SYMBOL_QUOTATION) {
+            } elseif (self::TYPE_SYMBOL === $type && $wt === self::SYMBOL_QUOTATION) {
                 if ($quotationHead) {
                     $text .= $wt;
                     $quotationHead = false;
