@@ -11,7 +11,6 @@ use function count;
 use function htmlspecialchars_decode;
 use function implode;
 use function in_array;
-use function log_debug;
 use function mb_check_encoding;
 use function preg_match;
 use function preg_match_all;
@@ -22,7 +21,6 @@ use function strlen;
 use function strtoupper;
 use function substr;
 use function trim;
-use function var_export;
 use function Zxin\Str\str_fullwidth_to_ascii;
 
 class TextWordService
@@ -276,7 +274,6 @@ class TextWordService
         } elseif (in_array($text, self::SYMBOL_BRACKETS_B)) {
             return 'R';
         } elseif ($text === self::SYMBOL_QUOTE) {
-            log_debug(var_export($this->_cxtCombineQuotationHead, true));
             if ($this->_cxtCombineQuotationHead) {
                 $this->_cxtCombineQuotationHead = false;
                 return 'R';
