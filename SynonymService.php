@@ -2,6 +2,7 @@
 
 namespace app\Service\TextWord;
 
+use app\Model\AmazonWordDictModel;
 use app\Service\TextWord\Synonym\Provider\BaseProvider;
 use app\Service\TextWord\Synonym\Provider\ReversoProvider;
 use app\Service\TextWord\Synonym\Provider\ThesaurusProvider;
@@ -75,5 +76,20 @@ class SynonymService
             }
         }
         return array_values(array_unique(array_merge($priority1, $priority2)));
+    }
+
+    /**
+     * @return array<WordText>
+     */
+    public function queryAggregationWithCheckDict(string $word): array
+    {
+        $items = $this->queryAllWithAggregation($word);
+        foreach ($items as $item) {
+            $result = AmazonWordDictModel::findWord($item->text(), true);
+            $item->attr['check'] = empty($result)
+                ? null
+                : ($result->isBad() ? '违禁词' : ($result->isWarn() ? '敏感词' : null));
+        }
+        return $items;
     }
 }

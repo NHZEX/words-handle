@@ -10,6 +10,8 @@ class WordText implements \Stringable, \JsonSerializable
 
     protected ?string $partOfSpeech = null;
 
+    public array $attr = [];
+
     public function __construct(string $text, bool $relevant = true, ?string $partOfSpeech = null)
     {
         $this->text         = $text;
@@ -38,6 +40,7 @@ class WordText implements \Stringable, \JsonSerializable
             'text'         => $this->text,
             'relevant'     => $this->relevant,
             'partOfSpeech' => $this->partOfSpeech,
+            'attr'         => $this->attr,
         ];
     }
 }

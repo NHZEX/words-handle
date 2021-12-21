@@ -318,6 +318,6 @@ class TextWordService
 
     public function synonym(string $word): array
     {
-        return SynonymService::instance()->queryAllWithAggregation($word);
+        return SynonymService::instance()->queryAggregationWithCheckDict($word);
     }
 }
