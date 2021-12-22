@@ -24,4 +24,21 @@ class TextConstants
     public const SYMBOL_LF         = "\n";
 
     public const FORCE_UPPER = ['i', 'ok'];
+
+    public const MONTH = [
+        'january', 'february', 'march', 'april', 'may', 'june',
+        'july', 'august', 'september', 'october', 'november', 'december',
+        'jan.', 'feb.', 'mar.', 'apr.', 'may.', 'jun.',
+        'jul.', 'aug.', 'sept.', 'oct.', 'nov.', 'dec.',
+    ];
+
+    public const WEEK = [
+        'monday', 'mon.',
+        'tuesday', 'tues.',
+        'wednesday', 'wed.',
+        'thursday', 'thur.', 'thurs.',
+        'friday', 'fri.',
+        'saturday', 'sat.',
+        'sunday', 'sun',
+    ];
 }

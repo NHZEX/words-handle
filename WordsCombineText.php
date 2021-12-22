@@ -49,6 +49,11 @@ final class WordsCombineText
             ) {
                 $wt = strtoupper($wt);
             } elseif (
+                TextConstants::TYPE_WORD === $type
+                && (in_array(strtolower($wt), TextConstants::MONTH) || in_array(strtolower($wt), TextConstants::WEEK))
+            ) {
+                $wt = ucfirst($wt);
+            } elseif (
                 0 !== $i
                 && TextConstants::TYPE_WORD === $type
                 && TextConstants::TYPE_SYMBOL === $items[$i - 1]['type']
