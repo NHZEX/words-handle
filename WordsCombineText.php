@@ -4,8 +4,10 @@ namespace app\Service\TextWord;
 
 use function in_array;
 use function is_numeric;
+use function strlen;
 use function strtolower;
 use function strtoupper;
+use function substr;
 use function ucfirst;
 
 final class WordsCombineText
@@ -41,6 +43,8 @@ final class WordsCombineText
             $word = $this->words[$i];
             /** @var string $wt */
             ['text' => $wt, 'type' => $type] = $word;
+
+            // 词重写1
             if ($this->forceFirstLetterUpper && TextConstants::TYPE_WORD === $type) {
                 $wt = ucfirst($wt);
             } elseif (
@@ -77,6 +81,18 @@ final class WordsCombineText
                 $wt = ucfirst($wt);
             }
 
+            // 词重写2
+            if (
+                TextConstants::TYPE_WORD === $type
+                && strlen($wt) > 1
+                && ($_str = substr($wt, 1))
+                && $_str !== strtoupper($_str)
+                && $_str !== ($_lower = strtolower($_str))
+            ) {
+                $wt = $wt[0] . $_lower;
+            }
+
+            // 上下文分析结合
             if ($i === $len - 1) {
                 $text .= $wt;
             } elseif (TextConstants::TYPE_LF === $type || TextConstants::TYPE_LF === $items[$i + 1]['type']) {
