@@ -11,7 +11,6 @@ use function count;
 use function htmlspecialchars_decode;
 use function implode;
 use function in_array;
-use function is_numeric;
 use function mb_check_encoding;
 use function preg_match;
 use function preg_match_all;
@@ -20,14 +19,10 @@ use function strip_tags;
 use function strlen;
 use function substr;
 use function trim;
-use function ucfirst;
 use function Zxin\Str\str_fullwidth_to_ascii;
 
 class TextWordService
 {
-    protected bool $_cxtCombineQuotationHead = false;
-    protected bool $_cxtCombineSingleQuotationHead = false;
-
     public function clean(string $text): string
     {
         $output = htmlspecialchars_decode($text);
@@ -162,7 +157,7 @@ class TextWordService
             } else {
                 // 等于1且字符串全等
                 $model       = $words[0];
-                $text        = $this->wordsCombine($bufferWords);
+                $text        = (new WordsCombineText($bufferWords))->build();
                 $bufferWords = [];
 
                 if ($model->isBad()) {
@@ -181,82 +176,6 @@ class TextWordService
         }
         if (!empty($bufferWords)) {
             yield from $bufferWords;
-        }
-    }
-
-    public function wordsCombine(array $items, bool $forceFirstLetterUpper = false): string
-    {
-        $this->_cxtCombineQuotationHead = false;
-        $this->_cxtCombineSingleQuotationHead = false;
-        $text = '';
-        $len  = count($items);
-        foreach ($items as $i => $word) {
-            /** @var string $wt */
-            ['text' => $wt, 'type' => $type] = $word;
-            if ($forceFirstLetterUpper && TextConstants::TYPE_WORD === $type) {
-                $wt = ucfirst($wt);
-            } elseif (
-                0 !== $i
-                && TextConstants::TYPE_WORD === $type
-                && TextConstants::TYPE_SYMBOL === $items[$i - 1]['type']
-                && ':' === $items[$i - 1]['text']
-            ) {
-                // 冒号后跟着的字母大写
-                $wt = ucfirst($wt);
-            }
-            if ($i === $len - 1) {
-                $text .= $wt;
-            } elseif (TextConstants::TYPE_LF === $type || TextConstants::TYPE_LF === $items[$i + 1]['type']) {
-                // 换行后面不需要空格
-                $text .= $wt;
-            } elseif (TextConstants::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($wt))) {
-                if ('L' === $filling) {
-                    $text .= ' ' . $wt;
-                } elseif ('R' === $filling) {
-                    $text .= $wt . ' ';
-                } else {
-                    $text .= $wt;
-                }
-            } elseif (TextConstants::TYPE_SYMBOL === $items[$i + 1]['type']) {
-                // 解决：引号、连接符
-                $text .= $wt;
-            } elseif (is_numeric($wt) && SymbolDefinition::isSymbol($items[$i + 1]['text'])) {
-                $text .= $wt;
-            } else {
-                $text .= $wt . ' ';
-            }
-        }
-        return $text;
-    }
-
-    public function symbolSpaceAnalyze(string $text): ?string
-    {
-        if (in_array($text, TextConstants::SYMBOL_LINK)) {
-            return '';
-        } elseif (in_array($text, TextConstants::SYMBOL_CUT)) {
-            return 'R';
-        } elseif (in_array($text, TextConstants::SYMBOL_BRACKETS_A)) {
-            return 'L';
-        } elseif (in_array($text, TextConstants::SYMBOL_BRACKETS_B)) {
-            return 'R';
-        } elseif ($text === TextConstants::SYMBOL_QUOTE) {
-            if ($this->_cxtCombineQuotationHead) {
-                $this->_cxtCombineQuotationHead = false;
-                return 'R';
-            } else {
-                $this->_cxtCombineQuotationHead = true;
-                return 'L';
-            }
-        } elseif ($text === TextConstants::SYMBOL_SINGLE_QUOTATION) {
-            if ($this->_cxtCombineSingleQuotationHead) {
-                $this->_cxtCombineSingleQuotationHead = false;
-                return 'R';
-            } else {
-                $this->_cxtCombineSingleQuotationHead = true;
-                return 'L';
-            }
-        } else {
-            return null;
         }
     }
 
