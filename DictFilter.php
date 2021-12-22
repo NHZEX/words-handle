@@ -7,6 +7,7 @@ use app\Model\AmazonWordDictModel;
 use app\Service\TextWord\Synonym\WordText;
 use function array_map;
 use function array_shift;
+use function count;
 use function implode;
 use function in_array;
 
@@ -59,6 +60,11 @@ class DictFilter implements \IteratorAggregate
             } else {
                 // 等于1且字符串全等
                 $model       = $words[0];
+                if (count($bufferWords) > 1 && $bufferWords[0]['type'] !== TextConstants::TYPE_WORD) {
+                    // 处理符号误粘连问题
+                    yield array_shift($bufferWords);
+                }
+
                 $text        = (new WordsCombineText($bufferWords))->build();
                 $bufferWords = [];
 
