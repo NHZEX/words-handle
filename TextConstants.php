@@ -10,35 +10,53 @@ class TextConstants
     public const TYPE_LF     = 'lf';
 
     // 连接符，与字符结合没有空格
-    public const SYMBOL_LINK       = ['/', '′', '+', '-', '–', '—', '=', '*', '≈', '°', '\''];
+    public const SYMBOL_LINK = ['/', '′', '+', '-', '–', '—', '=', '*', '≈', '°', '\''];
     // 各种括号
-    public const SYMBOL_BRACKETS_A = ['(', '[', '{'];
+    public const SYMBOL_BRACKETS_A       = ['(', '[', '{'];
     public const SYMBOL_BRACKETS_B       = [')', ']', '}'];
     public const SYMBOL_QUOTATION        = '"';
     public const SYMBOL_SINGLE_QUOTATION = '\''; // todo 存在冲突
     // 分割符，与字符结合有空格
-    public const SYMBOL_CUT        = [',', '.', '?', '!', ';'];
+    public const SYMBOL_CUT = [',', '.', '?', '!', ';'];
     // 分割符，切断文本分析
-    public const SYMBOL_SEG        = [':'];
+    public const SYMBOL_SEG = [':'];
     // 换行符，切断文本分析
-    public const SYMBOL_LF         = "\n";
+    public const SYMBOL_LF = "\n";
 
-    public const FORCE_UPPER = ['i', 'ok'];
+    public const FORCE_UPPER = [
+        // 单词
+        'i',
+        'ok',
+        // 缩写词
+        'wto',
+        'diy',
+        'fda',
+        'fyi',
+        'asap',
+        'sos',
+        'fbi',
+        'ibm',
+        'bbq',
+        'pp',
+        'abs',
+    ];
 
     public const MONTH = [
         'january', 'february', 'march', 'april', 'may', 'june',
         'july', 'august', 'september', 'october', 'november', 'december',
         'jan.', 'feb.', 'mar.', 'apr.', 'may.', 'jun.',
         'jul.', 'aug.', 'sept.', 'oct.', 'nov.', 'dec.',
+        'jan', 'feb', 'mar', 'apr', 'may', 'jun',
+        'jul', 'aug', 'sept', 'oct', 'nov', 'dec',
     ];
 
     public const WEEK = [
-        'monday', 'mon.',
-        'tuesday', 'tues.',
-        'wednesday', 'wed.',
-        'thursday', 'thur.', 'thurs.',
-        'friday', 'fri.',
-        'saturday', 'sat.',
-        'sunday', 'sun',
+        'monday', 'mon', 'mon.',
+        'tuesday', 'tues', 'tues.',
+        'wednesday', 'wed', 'wed.',
+        'thursday', 'thur', 'thurs', 'thur.', 'thurs.',
+        'friday', 'fri', 'fri.',
+        'saturday', 'sat', 'sat.',
+        'sunday', 'sun', 'sun.',
     ];
 }

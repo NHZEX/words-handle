@@ -2,6 +2,7 @@
 
 namespace app\Service\TextWord;
 
+use function array_flip;
 use function in_array;
 use function is_numeric;
 use function strlen;
@@ -20,9 +21,23 @@ final class WordsCombineText
 
     protected bool $_cxtCombineSingleQuotationHead = false;
 
+    static ?array $dictForceUpper = null;
+    static ?array $dictFirstLetterUpper = null;
+
     public function __construct(array $words)
     {
         $this->words = $words;
+
+        $this->initDict();
+    }
+
+    protected function initDict()
+    {
+        self::$dictForceUpper = array_flip(TextConstants::FORCE_UPPER);
+        self::$dictFirstLetterUpper = array_flip([
+            ...TextConstants::MONTH,
+            ...TextConstants::WEEK,
+        ]);
     }
 
     public function setForceFirstLetterUpper(bool $forceFirstLetterUpper): self
@@ -49,12 +64,12 @@ final class WordsCombineText
                 $wt = ucfirst($wt);
             } elseif (
                 TextConstants::TYPE_WORD === $type
-                && in_array(strtolower($wt), TextConstants::FORCE_UPPER)
+                && isset(self::$dictForceUpper[strtolower($wt)])
             ) {
                 $wt = strtoupper($wt);
             } elseif (
                 TextConstants::TYPE_WORD === $type
-                && (in_array(strtolower($wt), TextConstants::MONTH) || in_array(strtolower($wt), TextConstants::WEEK))
+                && isset(self::$dictFirstLetterUpper[strtolower($wt)])
             ) {
                 $wt = ucfirst($wt);
             } elseif (
