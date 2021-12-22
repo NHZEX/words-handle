@@ -16,7 +16,6 @@ use function mb_check_encoding;
 use function preg_match;
 use function preg_match_all;
 use function preg_replace;
-use function str_replace;
 use function strip_tags;
 use function strlen;
 use function strtoupper;
@@ -26,25 +25,6 @@ use function Zxin\Str\str_fullwidth_to_ascii;
 
 class TextWordService
 {
-    public const TYPE_WORD   = 'w';
-    public const TYPE_NUMBER = 'n';
-    public const TYPE_SYMBOL = 'o';
-    public const TYPE_LF     = 'lf';
-
-    // 连接符，与字符结合没有空格
-    protected const SYMBOL_LINK       = ['/', '′', '-', '–', '—', '=', '*', '≈', '°'];
-    // 各种括号
-    protected const SYMBOL_BRACKETS_A = ['(', '[', '{'];
-    protected const SYMBOL_BRACKETS_B = [')', ']', '}'];
-    protected const SYMBOL_QUOTE            = '"';
-    protected const SYMBOL_SINGLE_QUOTATION = '\'';
-    // 分割符，与字符结合有空格
-    protected const SYMBOL_CUT        = [',', '.', '?', '!', ';'];
-    // 分割符，切断文本分析
-    protected const SYMBOL_SEG        = [':'];
-    // 换行符，切断文本分析
-    protected const SYMBOL_LF         = "\n";
-
     protected bool $_cxtCombineQuotationHead = false;
     protected bool $_cxtCombineSingleQuotationHead = false;
 
@@ -53,33 +33,8 @@ class TextWordService
         $output = htmlspecialchars_decode($text);
         $output = strip_tags($output);
         /**$output = preg_replace('#<br\s?/?>#', "\n", $output);**/
-        $output = $this->filterSymbol(str_fullwidth_to_ascii($output));
+        $output = Helper::filterSymbol(str_fullwidth_to_ascii($output));
         return preg_replace("/\n{2,}/u", "\n\n", $output);
-    }
-
-    public function filterSymbol(string $input): string
-    {
-        return str_replace([
-            '&nbsp;',
-            "\xc2\xa0", // NBSP
-            '、',
-            '。',
-            '‘',
-            '’',
-            '“',
-            '”',
-            '≈',
-        ], [
-            ' ',
-            ' ',
-            ',',
-            '.',
-            '\'',
-            '\'',
-            '"',
-            '"',
-            '=',
-        ], $input);
     }
 
     public function slice(string $text): ?\Generator
@@ -116,25 +71,25 @@ class TextWordService
             $lastPoint = $point + $strLen;
             if (-1 !== $word[$i][1]) {
                 yield [
-                    'type' => self::TYPE_WORD,
+                    'type' => TextConstants::TYPE_WORD,
                     'stat' => null,
                     'text' => $str,
                 ];
             } elseif (-1 !== $symbol[$i][1]) {
                 yield [
-                    'type' => self::TYPE_SYMBOL,
+                    'type' => TextConstants::TYPE_SYMBOL,
                     'stat' => null,
                     'text' => $str,
                 ];
             } elseif (-1 !== $number[$i][1]) {
                 yield [
-                    'type' => self::TYPE_NUMBER,
+                    'type' => TextConstants::TYPE_NUMBER,
                     'stat' => null,
                     'text' => $str,
                 ];
             } elseif (-1 !== $lf[$i][1]) {
                 yield [
-                    'type' => self::TYPE_LF,
+                    'type' => TextConstants::TYPE_LF,
                     'stat' => null,
                     'text' => "\n",
                 ];
@@ -144,9 +99,9 @@ class TextWordService
         }
         if (strlen($text) > $lastPoint) {
             $str = substr($text, $lastPoint);
-            if (self::SYMBOL_LF === $str) {
+            if (TextConstants::SYMBOL_LF === $str) {
                 yield [
-                    'type' => self::TYPE_LF,
+                    'type' => TextConstants::TYPE_LF,
                     'stat' => null,
                     'text' => "\n",
                 ];
@@ -161,7 +116,7 @@ class TextWordService
         foreach ($this->filter($items) as $item) {
             ['type' => $type, 'stat' => $stat] = $item;
 
-            if (self::TYPE_WORD !== $type) {
+            if (TextConstants::TYPE_WORD !== $type) {
                 continue;
             }
             if ($stat > 0) {
@@ -176,11 +131,11 @@ class TextWordService
         foreach ($items as $item) {
             ['type' => $type, 'text' => $text] = $item;
 
-            if (self::TYPE_LF === $type
-                || self::TYPE_NUMBER === $type
+            if (TextConstants::TYPE_LF === $type
+                || TextConstants::TYPE_NUMBER === $type
                 || (
-                    self::TYPE_SYMBOL === $type
-                    && (in_array($text, self::SYMBOL_CUT) || in_array($text, self::SYMBOL_SEG))
+                    TextConstants::TYPE_SYMBOL === $type
+                    && (in_array($text, TextConstants::SYMBOL_CUT) || in_array($text, TextConstants::SYMBOL_SEG))
                 )
             ) {
                 yield from $bufferWords;
@@ -218,7 +173,7 @@ class TextWordService
                     $stat = 0;
                 }
                 yield [
-                    'type' => self::TYPE_WORD,
+                    'type' => TextConstants::TYPE_WORD,
                     'text' => $text,
                     'stat' => $stat,
                 ];
@@ -238,15 +193,15 @@ class TextWordService
         foreach ($items as $i => $word) {
             /** @var string $wt */
             ['text' => $wt, 'type' => $type] = $word;
-            if ($forceFirstLetterUpper && self::TYPE_WORD === $type) {
+            if ($forceFirstLetterUpper && TextConstants::TYPE_WORD === $type) {
                 $wt[0] = strtoupper($wt[0]);
             }
             if ($i === $len - 1) {
                 $text .= $wt;
-            } elseif (self::TYPE_LF === $type || self::TYPE_LF === $items[$i + 1]['type']) {
+            } elseif (TextConstants::TYPE_LF === $type || TextConstants::TYPE_LF === $items[$i + 1]['type']) {
                 // 解决：换行
                 $text .= $wt;
-            } elseif (self::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($wt))) {
+            } elseif (TextConstants::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($wt))) {
                 if ('L' === $filling) {
                     $text .= ' ' . $wt;
                 } elseif ('R' === $filling) {
@@ -254,7 +209,7 @@ class TextWordService
                 } else {
                     $text .= $wt;
                 }
-            } elseif (self::TYPE_SYMBOL === $items[$i + 1]['type']) {
+            } elseif (TextConstants::TYPE_SYMBOL === $items[$i + 1]['type']) {
                 // 解决：引号、连接符
                 $text .= $wt;
             } elseif (is_numeric($wt) && SymbolDefinition::isSymbol($items[$i + 1]['text'])) {
@@ -268,15 +223,15 @@ class TextWordService
 
     public function symbolSpaceAnalyze(string $text): ?string
     {
-        if (in_array($text, self::SYMBOL_LINK)) {
+        if (in_array($text, TextConstants::SYMBOL_LINK)) {
             return '';
-        } elseif (in_array($text, self::SYMBOL_CUT)) {
+        } elseif (in_array($text, TextConstants::SYMBOL_CUT)) {
             return 'R';
-        } elseif (in_array($text, self::SYMBOL_BRACKETS_A)) {
+        } elseif (in_array($text, TextConstants::SYMBOL_BRACKETS_A)) {
             return 'L';
-        } elseif (in_array($text, self::SYMBOL_BRACKETS_B)) {
+        } elseif (in_array($text, TextConstants::SYMBOL_BRACKETS_B)) {
             return 'R';
-        } elseif ($text === self::SYMBOL_QUOTE) {
+        } elseif ($text === TextConstants::SYMBOL_QUOTE) {
             if ($this->_cxtCombineQuotationHead) {
                 $this->_cxtCombineQuotationHead = false;
                 return 'R';
@@ -284,7 +239,7 @@ class TextWordService
                 $this->_cxtCombineQuotationHead = true;
                 return 'L';
             }
-        } elseif ($text === self::SYMBOL_SINGLE_QUOTATION) {
+        } elseif ($text === TextConstants::SYMBOL_SINGLE_QUOTATION) {
             if ($this->_cxtCombineSingleQuotationHead) {
                 $this->_cxtCombineSingleQuotationHead = false;
                 return 'R';
@@ -302,11 +257,11 @@ class TextWordService
         foreach ($items as $item) {
             $isWord = preg_match('/^[\p{L}\p{Pd}\p{Zs}]+$/u', $item) > 0;
             if ($isWord) {
-                $type = TextWordService::TYPE_WORD;
+                $type = TextConstants::TYPE_WORD;
             } elseif (preg_match('/^[\p{N}.]+$/u', $item) > 0) {
-                $type = TextWordService::TYPE_NUMBER;
+                $type = TextConstants::TYPE_NUMBER;
             } else {
-                $type = TextWordService::TYPE_SYMBOL;
+                $type = TextConstants::TYPE_SYMBOL;
             }
             yield [
                 'type' => $type,
