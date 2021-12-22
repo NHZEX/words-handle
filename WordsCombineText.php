@@ -5,6 +5,7 @@ namespace app\Service\TextWord;
 use function in_array;
 use function is_numeric;
 use function strtolower;
+use function strtoupper;
 use function ucfirst;
 
 final class WordsCombineText
@@ -43,6 +44,11 @@ final class WordsCombineText
             if ($this->forceFirstLetterUpper && TextConstants::TYPE_WORD === $type) {
                 $wt = ucfirst($wt);
             } elseif (
+                TextConstants::TYPE_WORD === $type
+                && in_array(strtolower($wt), TextConstants::FORCE_UPPER)
+            ) {
+                $wt = strtoupper($wt);
+            } elseif (
                 0 !== $i
                 && TextConstants::TYPE_WORD === $type
                 && TextConstants::TYPE_SYMBOL === $items[$i - 1]['type']
@@ -58,6 +64,7 @@ final class WordsCombineText
                 // 被引用的句子第一个词首字母要大写
                 $wt = ucfirst($wt);
             }
+
             if ($i === $len - 1) {
                 $text .= $wt;
             } elseif (TextConstants::TYPE_LF === $type || TextConstants::TYPE_LF === $items[$i + 1]['type']) {

@@ -22,4 +22,6 @@ class TextConstants
     public const SYMBOL_SEG        = [':'];
     // 换行符，切断文本分析
     public const SYMBOL_LF         = "\n";
+
+    public const FORCE_UPPER = ['i', 'ok'];
 }
