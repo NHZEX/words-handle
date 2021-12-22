@@ -18,9 +18,9 @@ use function preg_match_all;
 use function preg_replace;
 use function strip_tags;
 use function strlen;
-use function strtoupper;
 use function substr;
 use function trim;
+use function ucfirst;
 use function Zxin\Str\str_fullwidth_to_ascii;
 
 class TextWordService
@@ -184,7 +184,7 @@ class TextWordService
         }
     }
 
-    public function wordsCombine(iterable $items, bool $forceFirstLetterUpper = false): string
+    public function wordsCombine(array $items, bool $forceFirstLetterUpper = false): string
     {
         $this->_cxtCombineQuotationHead = false;
         $this->_cxtCombineSingleQuotationHead = false;
@@ -194,12 +194,20 @@ class TextWordService
             /** @var string $wt */
             ['text' => $wt, 'type' => $type] = $word;
             if ($forceFirstLetterUpper && TextConstants::TYPE_WORD === $type) {
-                $wt[0] = strtoupper($wt[0]);
+                $wt = ucfirst($wt);
+            } elseif (
+                0 !== $i
+                && TextConstants::TYPE_WORD === $type
+                && TextConstants::TYPE_SYMBOL === $items[$i - 1]['type']
+                && ':' === $items[$i - 1]['text']
+            ) {
+                // 冒号后跟着的字母大写
+                $wt = ucfirst($wt);
             }
             if ($i === $len - 1) {
                 $text .= $wt;
             } elseif (TextConstants::TYPE_LF === $type || TextConstants::TYPE_LF === $items[$i + 1]['type']) {
-                // 解决：换行
+                // 换行后面不需要空格
                 $text .= $wt;
             } elseif (TextConstants::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($wt))) {
                 if ('L' === $filling) {
