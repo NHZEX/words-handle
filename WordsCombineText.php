@@ -57,9 +57,16 @@ final class WordsCombineText
                 0 !== $i
                 && TextConstants::TYPE_WORD === $type
                 && TextConstants::TYPE_SYMBOL === $items[$i - 1]['type']
-                && ':' === $items[$i - 1]['text']
+                && (':' === $items[$i - 1]['text'] || '.' === $items[$i - 1]['text'])
             ) {
-                // 冒号后跟着的字母大写
+                // 冒号、句号后跟着的字母大写
+                $wt = ucfirst($wt);
+            } elseif (
+                0 !== $i
+                && TextConstants::TYPE_WORD === $type
+                && TextConstants::TYPE_LF === $items[$i - 1]['type']
+            ) {
+                // 换行后跟着的字母大写
                 $wt = ucfirst($wt);
             } elseif (
                 $this->quotationBegin
