@@ -4,6 +4,7 @@ namespace app\Service\TextWord;
 
 use function in_array;
 use function is_numeric;
+use function strtolower;
 use function ucfirst;
 
 final class WordsCombineText
@@ -35,7 +36,8 @@ final class WordsCombineText
         $text = '';
         $items = $this->words;
         $len  = count($items);
-        foreach ($items as $i => $word) {
+        for ($i = 0; $i < $len; $i++) {
+            $word = $this->words[$i];
             /** @var string $wt */
             ['text' => $wt, 'type' => $type] = $word;
             if ($this->forceFirstLetterUpper && TextConstants::TYPE_WORD === $type) {
@@ -54,7 +56,15 @@ final class WordsCombineText
             } elseif (TextConstants::TYPE_LF === $type || TextConstants::TYPE_LF === $items[$i + 1]['type']) {
                 // 换行后面不需要空格
                 $text .= $wt;
-            } elseif (TextConstants::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($wt))) {
+            } elseif (
+                0 !== $i
+                && TextConstants::TYPE_NUMBER === $items[$i]['type']
+                && ('x' === strtolower($items[$i + 1]['text']) || '*' === $items[$i + 1]['text'])
+                && TextConstants::TYPE_NUMBER === $items[$i + 2]['type']
+            ) {
+                $text .= $wt . 'x' . $items[$i + 2]['text'];
+                $i += 2;
+            } elseif (TextConstants::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($i, $word))) {
                 if ('L' === $filling) {
                     $text .= ' ' . $wt;
                 } elseif ('R' === $filling) {
@@ -66,6 +76,7 @@ final class WordsCombineText
                 // 解决：引号、连接符
                 $text .= $wt;
             } elseif (is_numeric($wt) && SymbolDefinition::isSymbol($items[$i + 1]['text'])) {
+                // 数字后面跟着的符号不需要空格
                 $text .= $wt;
             } else {
                 $text .= $wt . ' ';
@@ -74,8 +85,9 @@ final class WordsCombineText
         return $text;
     }
 
-    protected function symbolSpaceAnalyze(string $text): ?string
+    protected function symbolSpaceAnalyze(int $i, array $word): ?string
     {
+        ['text' => $text] = $word;
         if (in_array($text, TextConstants::SYMBOL_LINK)) {
             return '';
         } elseif (in_array($text, TextConstants::SYMBOL_CUT)) {
