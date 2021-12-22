@@ -13,7 +13,7 @@ final class WordsCombineText
 
     private bool $forceFirstLetterUpper = false;
 
-    protected bool $_cxtCombineQuotationHead = false;
+    protected bool $quotationBegin = false;
 
     protected bool $_cxtCombineSingleQuotationHead = false;
 
@@ -31,7 +31,7 @@ final class WordsCombineText
 
     public function build(): string
     {
-        $this->_cxtCombineQuotationHead = false;
+        $this->quotationBegin                 = false;
         $this->_cxtCombineSingleQuotationHead = false;
         $text = '';
         $items = $this->words;
@@ -49,6 +49,13 @@ final class WordsCombineText
                 && ':' === $items[$i - 1]['text']
             ) {
                 // 冒号后跟着的字母大写
+                $wt = ucfirst($wt);
+            } elseif (
+                $this->quotationBegin
+                && TextConstants::TYPE_WORD === $type
+                && TextConstants::SYMBOL_QUOTATION === $items[$i - 1]['text']
+            ) {
+                // 被引用的句子第一个词首字母要大写
                 $wt = ucfirst($wt);
             }
             if ($i === $len - 1) {
@@ -96,12 +103,12 @@ final class WordsCombineText
             return 'L';
         } elseif (in_array($text, TextConstants::SYMBOL_BRACKETS_B)) {
             return 'R';
-        } elseif ($text === TextConstants::SYMBOL_QUOTE) {
-            if ($this->_cxtCombineQuotationHead) {
-                $this->_cxtCombineQuotationHead = false;
+        } elseif ($text === TextConstants::SYMBOL_QUOTATION) {
+            if ($this->quotationBegin) {
+                $this->quotationBegin = false;
                 return 'R';
             } else {
-                $this->_cxtCombineQuotationHead = true;
+                $this->quotationBegin = true;
                 return 'L';
             }
         } elseif ($text === TextConstants::SYMBOL_SINGLE_QUOTATION) {
