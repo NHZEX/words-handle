@@ -54,7 +54,12 @@ class DictFilter implements \IteratorAggregate
             $matchCount = $words->count();
             if ($words->isEmpty()) {
                 // 无有效匹配
-                if (count($bufferWords) > 1) {
+                if (null !== $tmpWord) {
+                    yield from $bufferWords;
+                    yield $tmpWord;
+                    $bufferWords = [];
+                    $tmpWord = null;
+                } else if (count($bufferWords) > 1) {
                     $tmpWord  = array_pop($bufferWords);
                     goto QUERY_WORD;
                 } else {
