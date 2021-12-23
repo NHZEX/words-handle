@@ -11,6 +11,7 @@ use function array_shift;
 use function count;
 use function implode;
 use function in_array;
+use function log_debug;
 
 /**
  * @implements \IteratorAggregate<string, WordText>
@@ -32,7 +33,6 @@ class DictFilter implements \IteratorAggregate
             ['type' => $type, 'text' => $text] = $item;
 
             if (TextConstants::TYPE_LF === $type
-                || TextConstants::TYPE_NUMBER === $type
                 || (
                     TextConstants::TYPE_SYMBOL === $type
                     && (in_array($text, TextConstants::SYMBOL_CUT) || in_array($text, TextConstants::SYMBOL_SEG))
@@ -50,9 +50,33 @@ class DictFilter implements \IteratorAggregate
             $bufferStr     = implode(' ', array_map(fn($v) => $v['text'], $bufferWords));
 
             $queryText = AmazonWordDictModel::buildQueryString($bufferStr);
-            $words     = AmazonWordDictModel::findPhraseRaw($queryText, 2);
-            $matchCount = $words->count();
-            if ($words->isEmpty()) {
+            if (empty($queryText)) {
+                continue;
+            }
+            if (null !== $tmpWord) {
+                $_word = AmazonWordDictModel::findEqualRaw($queryText);
+                if (null === $_word) {
+                    if (count($bufferWords) > 1) {
+                        $_tmp2 = array_pop($bufferWords);
+                        yield from $bufferWords;
+                        yield $tmpWord;
+                        yield $_tmp2;
+                    } else {
+                        yield from $bufferWords;
+                        yield $tmpWord;
+                    }
+                    $bufferWords = [];
+                    $tmpWord = null;
+                    continue;
+                }
+                $words = [$_word];
+                $matchCount = 1;
+            } else {
+                $words     = AmazonWordDictModel::findPhraseRaw($queryText, 2);
+                $matchCount = $words->count();
+            }
+
+            if ($matchCount === 0) {
                 // 无有效匹配
                 if (null !== $tmpWord) {
                     yield from $bufferWords;
@@ -67,10 +91,16 @@ class DictFilter implements \IteratorAggregate
                 }
             } elseif (1 === $matchCount && $queryText !== $words[0]['query']) {
                 // 只有一个且字符串非全等
-                continue;
+                yield from $bufferWords;
+                $bufferWords = [];
+                if (null !== $tmpWord) {
+                    yield $tmpWord;
+                    $tmpWord = null;
+                }
             } else {
                 if ($matchCount > 1 && null === $tmpWord) {
                     // 存在多个匹配 可能可以优化
+                    log_debug('__matchCount');
                     continue;
                 }
                 // 等于1且字符串全等
@@ -79,7 +109,6 @@ class DictFilter implements \IteratorAggregate
                     // 处理符号误粘连问题
                     yield array_shift($bufferWords);
                 }
-
                 $text        = (new WordsCombineText($bufferWords))->build();
                 $bufferWords = [];
 
