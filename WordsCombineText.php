@@ -22,6 +22,7 @@ final class WordsCombineText
     protected bool $_cxtCombineSingleQuotationHead = false;
 
     static ?array $dictForceUpper = null;
+    static ?array $dictForceLower = null;
     static ?array $dictFirstLetterUpper = null;
 
     public function __construct(array $words)
@@ -34,6 +35,7 @@ final class WordsCombineText
     protected function initDict()
     {
         self::$dictForceUpper = array_flip(TextConstants::FORCE_UPPER);
+        self::$dictForceLower = array_flip(TextConstants::FORCE_LOWER);
         self::$dictFirstLetterUpper = array_flip([
             ...TextConstants::MONTH,
             ...TextConstants::WEEK,
@@ -58,6 +60,14 @@ final class WordsCombineText
             $word = $this->words[$i];
             /** @var string $wt */
             ['text' => $wt, 'type' => $type] = $word;
+
+            // 词重写
+            if (TextConstants::TYPE_WORD === $type
+                && isset(self::$dictForceLower[$_lower = strtolower($wt)])
+            ) {
+                // 优先级低，强制小写词
+                $wt = $_lower;
+            }
 
             // 词重写1
             if ($this->forceFirstLetterUpper && TextConstants::TYPE_WORD === $type) {

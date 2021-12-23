@@ -41,6 +41,27 @@ class TextConstants
         'abs',
     ];
 
+    public const FORCE_LOWER = [
+        // 介词，连词，冠词
+        'in', 'on', 'with', 'by', 'for', 'at',
+        'about', 'under', 'of', 'before', 'after',
+        'above', 'across', 'against', 'along',
+        'alongside', 'among', 'around', 'as',
+        'behind', 'below', 'beneath', 'beside', 'besides',
+        'between', 'beyond', 'but', 'despite', 'down',
+        'during', 'except', 'from', 'inside', 'into',
+        'like', 'near', 'off', 'opposite',
+        'out of', 'outside', 'over', 'past', 'regarding',
+        'round', 'since', 'through', 'throughout', 'till',
+        'to', 'toward', 'until', 'up', 'upon', 'within', 'without',
+        'and', 'or', 'nor', 'so', 'the', 'a', 'an'
+    ];
+
+    public const BLOCK_FORCE_LOWER = [
+        // 介词，连词，冠词
+        'in spite of', 'because of'
+    ];
+
     public const MONTH = [
         'january', 'february', 'march', 'april', 'may', 'june',
         'july', 'august', 'september', 'october', 'november', 'december',
