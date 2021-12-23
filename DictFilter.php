@@ -5,133 +5,174 @@ namespace app\Service\TextWord;
 use app\Enum\WordFilterEnum;
 use app\Model\AmazonWordDictModel;
 use app\Service\TextWord\Synonym\WordText;
+use function array_flip;
 use function array_map;
+use function array_merge;
 use function array_pop;
 use function array_shift;
 use function count;
 use function implode;
-use function in_array;
-use function log_debug;
+use function str_starts_with;
+use function strlen;
 
 /**
  * @implements \IteratorAggregate<string, WordText>
  */
 class DictFilter implements \IteratorAggregate
 {
-    private iterable $words;
+    private \Generator $words;
 
-    public function __construct(iterable $words)
+    static ?array $CUT_WORDS = null;
+
+    protected array $buffer = [];
+
+    public function __construct(\Generator $words)
     {
         $this->words = $words;
+
+        $this->initDict();
+    }
+
+    protected function initDict()
+    {
+        self::$CUT_WORDS = array_flip([...TextConstants::SYMBOL_CUT, ...TextConstants::SYMBOL_SEG]);
+    }
+
+    protected function joinWord(array $item): string
+    {
+        return implode(' ', array_map(fn($v) => $v['text'], $item));
     }
 
     public function getIterator(): \Traversable
     {
-        $bufferWords = [];
-        $tmpWord = null;
-        foreach ($this->words as $item) {
+        $this->buffer = [];
+        $goBackWord = null;
+        while ($this->words->valid()) {
+            $item = $this->words->current();
+            $this->words->next();
             ['type' => $type, 'text' => $text] = $item;
+//            dump("input: {$text}");
 
             if (TextConstants::TYPE_LF === $type
-                || (
-                    TextConstants::TYPE_SYMBOL === $type
-                    && (in_array($text, TextConstants::SYMBOL_CUT) || in_array($text, TextConstants::SYMBOL_SEG))
-                )
+                || (TextConstants::TYPE_SYMBOL === $type && isset(self::$CUT_WORDS[$text]))
             ) {
-                yield from $bufferWords;
+                yield from $this->buffer;
+                if (null !== $goBackWord) {
+                    yield $goBackWord;
+                    $goBackWord = null;
+                }
                 yield $item;
-                $bufferWords = [];
+                $this->buffer = [];
                 continue;
+            } else {
+                $this->buffer[] = $item;
             }
 
-            $bufferWords[] = $item;
-
-            QUERY_WORD:
-            $bufferStr     = implode(' ', array_map(fn($v) => $v['text'], $bufferWords));
-
-            $queryText = AmazonWordDictModel::buildQueryString($bufferStr);
+            QUERY_MATCH:
+            $wordsText = $this->joinWord($this->buffer);
+            $queryText  = AmazonWordDictModel::buildQueryString($wordsText);
+//            dump("> {$wordsText} > {$queryText}");
             if (empty($queryText)) {
+//                dump("> skip");
                 continue;
             }
-            if (null !== $tmpWord) {
-                $_word = AmazonWordDictModel::findEqualRaw($queryText);
-                if (null === $_word) {
-                    if (count($bufferWords) > 1) {
-                        $_tmp2 = array_pop($bufferWords);
-                        yield from $bufferWords;
-                        yield $tmpWord;
-                        yield $_tmp2;
-                    } else {
-                        yield from $bufferWords;
-                        yield $tmpWord;
+            $matchItems = AmazonWordDictModel::findPhraseRaw($queryText, 2);
+            $matchCount = $matchItems->count();
+//            dump("> matchCount: {$matchCount}");
+
+            if (0 === $matchCount) {
+                if (null !== $goBackWord) {
+                    // 回退后是错误的
+                    throw new \LogicException('回退后不可能无法匹配');
+                } elseif (count($this->buffer) > 1) {
+                    // 前一次是匹配，叠加后不匹配，回退
+//                    dump("> go back");
+                    $goBackWord  = array_pop($this->buffer);
+                    $wordsText = $this->joinWord($this->buffer);
+                    $queryText  = AmazonWordDictModel::buildQueryString($wordsText);
+                    $_word = AmazonWordDictModel::findEqualRaw($queryText);
+                    if (null === $_word) {
+                        // 无法匹配，全部弹出
+                        yield from $this->buffer;
+                        $this->buffer = [$goBackWord];
+                        $goBackWord = null;
+                        continue;
                     }
-                    $bufferWords = [];
-                    $tmpWord = null;
+                    $matchItems = [$_word];
+                    goto SUCCESS;
+                } else {
+                    yield array_shift($this->buffer);
+                }
+            } elseif (1 === $matchCount) {
+                if ($queryText === $matchItems[0]['query']) {
+                    // 完全匹配
+                    goto SUCCESS;
+                } elseif (str_starts_with($matchItems[0]['query'], $queryText)) {
+//                    dump('>-prefix');
+                    // 前缀匹配
+                    $matchQuery = $matchItems[0]['query'];
+                    $_tmpBuffer = [];
+                    // 前缀匹配，尝试完全匹配
+                    while ($this->words->valid()) {
+                        $item = $this->words->current();
+                        $this->words->next();
+                        $_tmpBuffer[] = $item;
+                        $wordsText = $this->joinWord(array_merge($this->buffer, $_tmpBuffer));
+                        $queryText = AmazonWordDictModel::buildQueryString($wordsText);
+//                        dump(">-prefix: {$wordsText} > {$queryText}");
+                        $matchPos = strpos($matchQuery, $queryText);
+                        if (0 !== $matchPos) {
+                            // 无法匹配，全部弹出
+                            yield from $this->buffer;
+                            $this->buffer = $_tmpBuffer;
+                            continue 2;
+                        }
+                        if (strlen($matchQuery) === strlen($queryText)) {
+                            // 完全匹配，作为一个整体
+                            $this->buffer = $_tmpBuffer;
+                            goto SUCCESS;
+                        }
+                    }
+                    throw new \LogicException('不可预知的情况，执行异常的分支');
+                } else {
+                    // 存在多个匹配
                     continue;
                 }
-                $words = [$_word];
-                $matchCount = 1;
-            } else {
-                $words     = AmazonWordDictModel::findPhraseRaw($queryText, 2);
-                $matchCount = $words->count();
-            }
 
-            if ($matchCount === 0) {
-                // 无有效匹配
-                if (null !== $tmpWord) {
-                    yield from $bufferWords;
-                    yield $tmpWord;
-                    $bufferWords = [];
-                    $tmpWord = null;
-                } else if (count($bufferWords) > 1) {
-                    $tmpWord  = array_pop($bufferWords);
-                    goto QUERY_WORD;
-                } else {
-                    yield array_shift($bufferWords);
-                }
-            } elseif (1 === $matchCount && $queryText !== $words[0]['query']) {
-                // 只有一个且字符串非全等
-                yield from $bufferWords;
-                $bufferWords = [];
-                if (null !== $tmpWord) {
-                    yield $tmpWord;
-                    $tmpWord = null;
-                }
-            } else {
-                if ($matchCount > 1 && null === $tmpWord) {
-                    // 存在多个匹配 可能可以优化
-                    log_debug('__matchCount');
-                    continue;
-                }
-                // 等于1且字符串全等
-                $model       = $words[0];
-                if (count($bufferWords) > 1 && $bufferWords[0]['type'] !== TextConstants::TYPE_WORD) {
-                    // 处理符号误粘连问题
-                    yield array_shift($bufferWords);
-                }
-                $text        = (new WordsCombineText($bufferWords))->build();
-                $bufferWords = [];
+                SUCCESS: {
+                    if (count($matchItems) > 1) {
+                        throw new \LogicException('不允许存在多个匹配值');
+                    }
+                    if (count($this->buffer) > 1 && $this->buffer[0]['type'] !== TextConstants::TYPE_WORD) {
+                        // 处理符号误粘连问题
+                        yield array_shift($this->buffer);
+                    }
+                    // 匹配成功
+                    $text         = (new WordsCombineText($this->buffer))->build();
+                    $this->buffer = [];
 
-                if ($model->isBad()) {
-                    $stat = WordFilterEnum::_BAD;
-                } elseif ($model->isWarn()) {
-                    $stat = WordFilterEnum::_WARN;
-                } else {
-                    $stat = 0;
-                }
-                yield [
-                    'type' => TextConstants::TYPE_WORD,
-                    'text' => $text,
-                    'stat' => $stat,
-                ];
-                if (null !== $tmpWord) {
-                    $bufferWords[] = $tmpWord;
-                    $tmpWord = null;
+                    $model       = $matchItems[0];
+                    if ($model->isBad()) {
+                        $stat = WordFilterEnum::_BAD;
+                    } elseif ($model->isWarn()) {
+                        $stat = WordFilterEnum::_WARN;
+                    } else {
+                        $stat = 0;
+                    }
+                    yield [
+                        'type' => TextConstants::TYPE_WORD,
+                        'text' => $text,
+                        'stat' => $stat,
+                    ];
+                    if (null !== $goBackWord) {
+                        yield $goBackWord;
+                        $goBackWord = null;
+                    }
                 }
             }
         }
-        if (!empty($bufferWords)) {
-            yield from $bufferWords;
+        if (!empty($this->buffer)) {
+            yield from $this->buffer;
         }
     }
 }
