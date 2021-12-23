@@ -51,7 +51,7 @@ class TextConstants
         'between', 'beyond', 'but', 'despite', 'down',
         'during', 'except', 'from', 'inside', 'into',
         'like', 'near', 'off', 'opposite',
-        'out of', 'outside', 'over', 'past', 'regarding',
+        'outside', 'over', 'past', 'regarding',
         'round', 'since', 'through', 'throughout', 'till',
         'to', 'toward', 'until', 'up', 'upon', 'within', 'without',
         'and', 'or', 'nor', 'so', 'the', 'a', 'an'
@@ -64,7 +64,10 @@ class TextConstants
         ],
         'because' => [
             ['because', 'of'],
-        ]
+        ],
+        'out' => [
+            ['out', 'of']
+        ],
     ];
 
     public const MONTH = [
