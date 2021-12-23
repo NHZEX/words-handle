@@ -59,7 +59,12 @@ class TextConstants
 
     public const BLOCK_FORCE_LOWER = [
         // 介词，连词，冠词
-        'in spite of', 'because of'
+        'in' => [
+            ['in', 'spite', 'of'],
+        ],
+        'because' => [
+            ['because', 'of'],
+        ]
     ];
 
     public const MONTH = [

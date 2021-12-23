@@ -3,8 +3,10 @@
 namespace app\Service\TextWord;
 
 use function array_flip;
+use function count;
 use function in_array;
 use function is_numeric;
+use function join;
 use function strlen;
 use function strtolower;
 use function strtoupper;
@@ -67,6 +69,18 @@ final class WordsCombineText
             ) {
                 // 优先级低，强制小写词
                 $wt = $_lower;
+            }
+
+            // 块重写
+            if (
+                TextConstants::TYPE_WORD === $type
+                && $sentence = (TextConstants::BLOCK_FORCE_LOWER[strtolower($wt)] ?? null)
+            ) {
+                $newIndex = 0;
+                if ($_text = $this->blockRewriteAnalyze($sentence, $i, $newIndex)) {
+                    $text .= $_text . ' ';
+                    $i += $newIndex - 1;
+                }
             }
 
             // 词重写1
@@ -150,6 +164,27 @@ final class WordsCombineText
             }
         }
         return $text;
+    }
+
+    protected function blockRewriteAnalyze(array $sentence, int $i, int &$next): ?string
+    {
+        if (count($sentence) === 0) {
+            return null;
+        }
+        $items = $this->words;
+        foreach ($sentence as $item) {
+            foreach ($item as $_si => $val) {
+                if (
+                    TextConstants::TYPE_WORD !== $items[$i + $_si]['type']
+                    && $val !== strtolower($items[$i + $_si]['text'])
+                ) {
+                    continue 2;
+                }
+            }
+            $next = count($item);
+            return join(' ', $item);
+        }
+        return null;
     }
 
     protected function symbolSpaceAnalyze(int $i, array $word): ?string
