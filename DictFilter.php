@@ -6,6 +6,7 @@ use app\Enum\WordFilterEnum;
 use app\Model\AmazonWordDictModel;
 use app\Service\TextWord\Synonym\WordText;
 use function array_flip;
+use function array_key_last;
 use function array_map;
 use function array_merge;
 use function array_pop;
@@ -47,14 +48,18 @@ class DictFilter implements \IteratorAggregate
     {
         $this->buffer = [];
         $goBackWord = null;
+        $matchCount = 0;
         while ($this->words->valid()) {
             $item = $this->words->current();
             $this->words->next();
             ['type' => $type, 'text' => $text] = $item;
 //            dump("input: {$text}");
 
-            if (TextConstants::TYPE_LF === $type
-                || (TextConstants::TYPE_SYMBOL === $type && isset(self::$CUT_WORDS[$text]))
+            if (0 === $matchCount
+                && (
+                    TextConstants::TYPE_LF === $type
+                    || (TextConstants::TYPE_SYMBOL === $type && isset(self::$CUT_WORDS[$text]))
+                )
             ) {
                 yield from $this->buffer;
                 if (null !== $goBackWord) {
@@ -152,9 +157,15 @@ class DictFilter implements \IteratorAggregate
                     if (count($matchItems) > 1) {
                         throw new \LogicException('不允许存在多个匹配值');
                     }
-                    if (count($this->buffer) > 1 && $this->buffer[0]['type'] !== TextConstants::TYPE_WORD) {
+                    if (count($this->buffer) > 1) {
                         // 处理符号误粘连问题
-                        yield array_shift($this->buffer);
+                        if ($this->buffer[0]['type'] !== TextConstants::TYPE_WORD) {
+                            yield array_shift($this->buffer);
+                        } elseif (
+                            $this->buffer[array_key_last($this->buffer)]['type'] === TextConstants::TYPE_SYMBOL
+                        ) {
+                            $_tmpSymbolLast = array_pop($this->buffer);
+                        }
                     }
                     // 匹配成功
                     $text         = (new WordsCombineText($this->buffer))->build();
@@ -173,6 +184,10 @@ class DictFilter implements \IteratorAggregate
                         'text' => $text,
                         'stat' => $stat,
                     ];
+                    if (isset($_tmpSymbolLast)) {
+                        yield $_tmpSymbolLast;
+                        $_tmpSymbolLast = null;
+                    }
                     if (null !== $goBackWord) {
                         yield $goBackWord;
                         $goBackWord = null;
