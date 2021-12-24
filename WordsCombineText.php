@@ -135,6 +135,13 @@ final class WordsCombineText
             } elseif (TextConstants::TYPE_LF === $type || TextConstants::TYPE_LF === $items[$i + 1]['type']) {
                 // 换行后面不需要空格
                 $text .= $wt;
+            } elseif (TextConstants::TYPE_WORD === $type
+                && TextConstants::SYMBOL_APOSTROPHE === $items[$i + 1]['text']
+                && TextConstants::TYPE_WORD === $items[$i + 2]['type']
+            ) {
+                // 撇号连接不需要空格 todo 可能需要字典
+                $text .= $wt . TextConstants::SYMBOL_APOSTROPHE . strtolower($items[$i + 2]['text']) . ' ';
+                $i    += 2;
             } elseif (
                 0 !== $i
                 && TextConstants::TYPE_NUMBER === $items[$i]['type']
