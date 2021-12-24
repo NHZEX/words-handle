@@ -96,7 +96,7 @@ class DictFilter implements \IteratorAggregate
                         yield from $this->buffer;
                         $this->buffer = [$goBackWord];
                         $goBackWord = null;
-                        continue;
+                        goto QUERY_MATCH;
                     }
                     $matchItems = [$_word];
                     goto SUCCESS;
@@ -122,7 +122,6 @@ class DictFilter implements \IteratorAggregate
                         $queryText = AmazonWordDictModel::buildQueryString($wordsText);
 //                        dump(">-prefix: {$wordsText} > {$queryText}");
                         $matchPos = strpos($matchQuery, $queryText);
-//                        var_dump($matchPos);
                         if (0 !== $matchPos) {
 //                            dump('>-prefix:fail');
                             // 无法匹配，全部弹出
@@ -140,6 +139,7 @@ class DictFilter implements \IteratorAggregate
                     if (true === $this->words->valid()) {
                         throw new \LogicException('不可预知的情况，执行异常的分支');
                     }
+                    // 没有可匹配的词，弹出
                     yield from $this->buffer;
                     $this->buffer = $_tmpBuffer;
                     continue;
