@@ -23,6 +23,8 @@ final class SymbolDefinition
         'ft',
         'lb',
         'oz',
+        'yd',
+        'gal',
         'acre',
         'pound',
         'ounce',
