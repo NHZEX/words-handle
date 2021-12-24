@@ -151,7 +151,7 @@ final class WordsCombineText
                 $text .= $wt . 'x' . $items[$i + 2]['text'];
                 $i    += 2;
                 if (SymbolDefinition::isSymbolWithLowerCase($items[$i + 1]['text'])) {
-                    $text .= $items[$i + 1]['text'] . ' ';
+                    $text .= strtolower($items[$i + 1]['text']) . ' ';
                     $i    += 1;
                 }
             } elseif (TextConstants::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($i, $word))) {
