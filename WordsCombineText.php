@@ -4,6 +4,7 @@ namespace app\Service\TextWord;
 
 use function array_flip;
 use function count;
+use function dump;
 use function in_array;
 use function is_numeric;
 use function join;
@@ -63,14 +64,6 @@ final class WordsCombineText
             /** @var string $wt */
             ['text' => $wt, 'type' => $type] = $word;
 
-            // 词重写
-            if (TextConstants::TYPE_WORD === $type
-                && isset(self::$dictForceLower[$_lower = strtolower($wt)])
-            ) {
-                // 优先级低，强制小写词
-                $wt = $_lower;
-            }
-
             // 块重写
             if (
                 TextConstants::TYPE_WORD === $type
@@ -80,23 +73,31 @@ final class WordsCombineText
                 if ($_text = $this->blockRewriteAnalyze($sentence, $i, $newIndex)) {
                     $text .= $_text . ' ';
                     $i += $newIndex - 1;
+                    dump("> [block] {$_text}");
                 }
             }
 
             // 词重写1
             if ($this->forceFirstLetterUpper && TextConstants::TYPE_WORD === $type) {
                 $wt = ucfirst($wt);
-            } elseif (
-                TextConstants::TYPE_WORD === $type
-                && isset(self::$dictForceUpper[strtolower($wt)])
-            ) {
-                $wt = strtoupper($wt);
-            } elseif (
+            }
+            if (
                 TextConstants::TYPE_WORD === $type
                 && isset(self::$dictFirstLetterUpper[strtolower($wt)])
             ) {
                 $wt = ucfirst($wt);
             } elseif (
+                TextConstants::TYPE_WORD === $type
+                && isset(self::$dictForceUpper[strtolower($wt)])
+            ) {
+                $wt = strtoupper($wt);
+            } elseif (TextConstants::TYPE_WORD === $type
+                && isset(self::$dictForceLower[$_lower = strtolower($wt)])
+            ) {
+                // 强制小写词
+                $wt = $_lower;
+            }
+            if (
                 0 !== $i
                 && TextConstants::TYPE_WORD === $type
                 && TextConstants::TYPE_SYMBOL === $items[$i - 1]['type']
@@ -145,6 +146,10 @@ final class WordsCombineText
             ) {
                 $text .= $wt . 'x' . $items[$i + 2]['text'];
                 $i += 2;
+                if (SymbolDefinition::isSymbolWithLowerCase($items[$i + 1]['text'])) {
+                    $text .= $items[$i + 1]['text'] . ' ';
+                    $i += 1;
+                }
             } elseif (TextConstants::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($i, $word))) {
                 if ('L' === $filling) {
                     $text .= ' ' . $wt;
@@ -156,9 +161,14 @@ final class WordsCombineText
             } elseif (TextConstants::TYPE_SYMBOL === $items[$i + 1]['type']) {
                 // 解决：引号、连接符
                 $text .= $wt;
+            } elseif (is_numeric($wt) && SymbolDefinition::isSymbolWithLowerCase($items[$i + 1]['text'])) {
+                // 数字后面跟着的符号不需要空格
+                $text .= $wt . strtolower($items[$i + 1]['text']) . ' ';
+                $i += 1;
             } elseif (is_numeric($wt) && SymbolDefinition::isSymbol($items[$i + 1]['text'])) {
                 // 数字后面跟着的符号不需要空格
-                $text .= $wt;
+                $text .= $wt . $items[$i + 1]['text'] . ' ';
+                $i += 1;
             } else {
                 $text .= $wt . ' ';
             }
