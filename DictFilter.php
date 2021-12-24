@@ -122,6 +122,7 @@ class DictFilter implements \IteratorAggregate
                         $queryText = AmazonWordDictModel::buildQueryString($wordsText);
 //                        dump(">-prefix: {$wordsText} > {$queryText}");
                         $matchPos = strpos($matchQuery, $queryText);
+//                        var_dump($matchPos);
                         if (0 !== $matchPos) {
 //                            dump('>-prefix:fail');
                             // 无法匹配，全部弹出
@@ -136,7 +137,12 @@ class DictFilter implements \IteratorAggregate
                             goto SUCCESS;
                         }
                     }
-                    throw new \LogicException('不可预知的情况，执行异常的分支');
+                    if (true === $this->words->valid()) {
+                        throw new \LogicException('不可预知的情况，执行异常的分支');
+                    }
+                    yield from $this->buffer;
+                    $this->buffer = $_tmpBuffer;
+                    continue;
                 } else {
                     // 存在多个匹配
                     continue;
