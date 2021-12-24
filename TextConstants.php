@@ -12,10 +12,10 @@ class TextConstants
     // 连接符，与字符结合没有空格
     public const SYMBOL_LINK = ['/', '′', '+', '-', '–', '—', '=', '*', '≈', '°', '\''];
     // 各种括号
-    public const SYMBOL_BRACKETS_A       = ['(', '[', '{'];
-    public const SYMBOL_BRACKETS_B       = [')', ']', '}'];
-    public const SYMBOL_QUOTATION        = '"';
-    public const SYMBOL_SINGLE_QUOTATION = '\''; // todo 存在冲突
+    public const SYMBOL_BRACKETS_A = ['(', '[', '{'];
+    public const SYMBOL_BRACKETS_B = [')', ']', '}'];
+    public const SYMBOL_QUOTATION  = '"';
+    public const SYMBOL_APOSTROPHE = '\'';
     // 分割符，与字符结合有空格
     public const SYMBOL_CUT = [',', '.', '?', '!', ';'];
     // 分割符，切断文本分析

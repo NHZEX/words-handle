@@ -22,10 +22,8 @@ final class WordsCombineText
 
     protected bool $quotationBegin = false;
 
-    protected bool $_cxtCombineSingleQuotationHead = false;
-
-    static ?array $dictForceUpper = null;
-    static ?array $dictForceLower = null;
+    static ?array $dictForceUpper       = null;
+    static ?array $dictForceLower       = null;
     static ?array $dictFirstLetterUpper = null;
 
     public function __construct(array $words)
@@ -37,8 +35,8 @@ final class WordsCombineText
 
     protected function initDict()
     {
-        self::$dictForceUpper = array_flip(TextConstants::FORCE_UPPER);
-        self::$dictForceLower = array_flip(TextConstants::FORCE_LOWER);
+        self::$dictForceUpper       = array_flip(TextConstants::FORCE_UPPER);
+        self::$dictForceLower       = array_flip(TextConstants::FORCE_LOWER);
         self::$dictFirstLetterUpper = array_flip([
             ...TextConstants::MONTH,
             ...TextConstants::WEEK,
@@ -54,11 +52,10 @@ final class WordsCombineText
 
     public function build(): string
     {
-        $this->quotationBegin                 = false;
-        $this->_cxtCombineSingleQuotationHead = false;
-        $text = '';
-        $items = $this->words;
-        $len  = count($items);
+        $this->quotationBegin = false;
+        $text                 = '';
+        $items                = $this->words;
+        $len                  = count($items);
         for ($i = 0; $i < $len; $i++) {
             $word = $this->words[$i];
             /** @var string $wt */
@@ -72,7 +69,7 @@ final class WordsCombineText
                 $newIndex = 0;
                 if ($_text = $this->blockRewriteAnalyze($sentence, $i, $newIndex)) {
                     $text .= $_text . ' ';
-                    $i += $newIndex - 1;
+                    $i    += $newIndex - 1;
                     dump("> [block] {$_text}");
                 }
             }
@@ -145,10 +142,10 @@ final class WordsCombineText
                 && TextConstants::TYPE_NUMBER === $items[$i + 2]['type']
             ) {
                 $text .= $wt . 'x' . $items[$i + 2]['text'];
-                $i += 2;
+                $i    += 2;
                 if (SymbolDefinition::isSymbolWithLowerCase($items[$i + 1]['text'])) {
                     $text .= $items[$i + 1]['text'] . ' ';
-                    $i += 1;
+                    $i    += 1;
                 }
             } elseif (TextConstants::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($i, $word))) {
                 if ('L' === $filling) {
@@ -164,11 +161,11 @@ final class WordsCombineText
             } elseif (is_numeric($wt) && SymbolDefinition::isSymbolWithLowerCase($items[$i + 1]['text'])) {
                 // 数字后面跟着的符号不需要空格
                 $text .= $wt . strtolower($items[$i + 1]['text']) . ' ';
-                $i += 1;
+                $i    += 1;
             } elseif (is_numeric($wt) && SymbolDefinition::isSymbol($items[$i + 1]['text'])) {
                 // 数字后面跟着的符号不需要空格
                 $text .= $wt . $items[$i + 1]['text'] . ' ';
-                $i += 1;
+                $i    += 1;
             } else {
                 $text .= $wt . ' ';
             }
@@ -208,22 +205,6 @@ final class WordsCombineText
             return 'L';
         } elseif (in_array($text, TextConstants::SYMBOL_BRACKETS_B)) {
             return 'R';
-        } elseif ($text === TextConstants::SYMBOL_QUOTATION) {
-            if ($this->quotationBegin) {
-                $this->quotationBegin = false;
-                return 'R';
-            } else {
-                $this->quotationBegin = true;
-                return 'L';
-            }
-        } elseif ($text === TextConstants::SYMBOL_SINGLE_QUOTATION) {
-            if ($this->_cxtCombineSingleQuotationHead) {
-                $this->_cxtCombineSingleQuotationHead = false;
-                return 'R';
-            } else {
-                $this->_cxtCombineSingleQuotationHead = true;
-                return 'L';
-            }
         } else {
             return null;
         }
