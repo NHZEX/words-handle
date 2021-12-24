@@ -105,6 +105,7 @@ class DictFilter implements \IteratorAggregate
                 }
             } elseif (1 === $matchCount) {
                 if ($queryText === $matchItems[0]['query']) {
+//                    dump('>-prefix:equal');
                     // 完全匹配
                     goto SUCCESS;
                 } elseif (str_starts_with($matchItems[0]['query'], $queryText)) {
@@ -122,14 +123,16 @@ class DictFilter implements \IteratorAggregate
 //                        dump(">-prefix: {$wordsText} > {$queryText}");
                         $matchPos = strpos($matchQuery, $queryText);
                         if (0 !== $matchPos) {
+//                            dump('>-prefix:fail');
                             // 无法匹配，全部弹出
                             yield from $this->buffer;
                             $this->buffer = $_tmpBuffer;
                             continue 2;
                         }
                         if (strlen($matchQuery) === strlen($queryText)) {
+//                            dump('>-prefix:success');
                             // 完全匹配，作为一个整体
-                            $this->buffer = $_tmpBuffer;
+                            $this->buffer = array_merge($this->buffer, $_tmpBuffer);
                             goto SUCCESS;
                         }
                     }

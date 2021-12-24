@@ -114,7 +114,7 @@ class TextWordService
         }
     }
 
-    public function filter(iterable $items): \Generator
+    public function filter(\Generator $items): \Generator
     {
         yield from (new DictFilter($items));
     }
