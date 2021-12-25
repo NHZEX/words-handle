@@ -100,7 +100,7 @@ class TextWordService
         }
     }
 
-    public function filterOnlyInvalid(iterable $items): \Generator
+    public function filterOnlyInvalid(\Generator $items): \Generator
     {
         foreach ($this->filter($items) as $item) {
             ['type' => $type, 'stat' => $stat] = $item;

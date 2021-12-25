@@ -150,8 +150,8 @@ final class WordsCombineText
             ) {
                 $text .= $wt . 'x' . $items[$i + 2]['text'];
                 $i    += 2;
-                if (SymbolDefinition::isSymbolWithLowerCase($items[$i + 1]['text'])) {
-                    $text .= strtolower($items[$i + 1]['text']) . ' ';
+                if ($_symbol = SymbolDefinition::findSymbol($items[$i + 1]['text'])) {
+                    $text .= $_symbol . ' ';
                     $i    += 1;
                 }
             } elseif (TextConstants::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($i, $word))) {
@@ -165,13 +165,9 @@ final class WordsCombineText
             } elseif (TextConstants::TYPE_SYMBOL === $items[$i + 1]['type']) {
                 // 解决：引号、连接符
                 $text .= $wt;
-            } elseif (is_numeric($wt) && SymbolDefinition::isSymbolWithLowerCase($items[$i + 1]['text'])) {
-                // 数字后面跟着的符号不需要空格
-                $text .= $wt . strtolower($items[$i + 1]['text']) . ' ';
-                $i    += 1;
-            } elseif (is_numeric($wt) && SymbolDefinition::isSymbol($items[$i + 1]['text'])) {
-                // 数字后面跟着的符号不需要空格
-                $text .= $wt . $items[$i + 1]['text'] . ' ';
+            } elseif (is_numeric($wt) && $_symbol = SymbolDefinition::findSymbol($items[$i + 1]['text'])) {
+                // 数字后面跟着的符号
+                $text .= $wt . $_symbol . ' ';
                 $i    += 1;
             } else {
                 $text .= $wt . ' ';
