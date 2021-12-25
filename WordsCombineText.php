@@ -187,6 +187,10 @@ final class WordsCombineText
                 } else {
                     $text .= $wt;
                 }
+            } elseif (TextConstants::TYPE_NUMBER === $type && is_numeric($wt) && $_text = $this->blockAnalyzeNumber($i, $_next)) {
+                // 数字分析
+                $text .= $_text;
+                $i    += $_next;
             } elseif (TextConstants::TYPE_SYMBOL === $items[$i + 1]['type']) {
                 // 解决：引号、连接符
                 $text .= $wt;
@@ -242,6 +246,24 @@ final class WordsCombineText
             return join(' ', $country);
         }
         return null;
+    }
+
+    protected function blockAnalyzeNumber(int $i, ?int &$next): ?string
+    {
+        ['text' => $wt, 'type' => $type] = $this->words[$i];
+        if (
+            count($this->words) - 1 >= $i + 3
+            && strlen($wt) <= 2
+            && ':' === $this->words[$i + 1]['text']
+            && is_numeric($this->words[$i + 2]['text']) && strlen($this->words[$i + 2]['text']) <= 2
+            && in_array(strtolower($this->words[$i + 3]['text']), ['am', 'pm'])
+        ) {
+            // 时间字符串
+            $next = 3;
+            return "{$wt}:{$this->words[$i + 2]['text']}" . strtoupper($this->words[$i + 3]['text']) . ' ';
+        } else {
+            return null;
+        }
     }
 
     protected function symbolSpaceAnalyze(int $i, array $word): ?string
