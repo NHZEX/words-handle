@@ -2,9 +2,9 @@
 
 namespace app\Service\TextWord;
 
+use app\Service\TextWord\Symbol\SD_ISO3166;
 use function array_flip;
 use function count;
-use function dump;
 use function in_array;
 use function is_numeric;
 use function join;
@@ -16,6 +16,7 @@ use function ucfirst;
 
 final class WordsCombineText
 {
+    /** @var array<int, array{type: string, text: string}> */
     private array $words;
 
     private bool $forceFirstLetterUpper = false;
@@ -57,20 +58,38 @@ final class WordsCombineText
         $items                = $this->words;
         $len                  = count($items);
         for ($i = 0; $i < $len; $i++) {
+            /** @var array{type: string, text: string} $word */
             $word = $this->words[$i];
             /** @var string $wt */
             ['text' => $wt, 'type' => $type] = $word;
 
             // 块重写
             if (
-                TextConstants::TYPE_WORD === $type
+                TextConstants::TYPE_WORD === $word['text']
                 && $sentence = (TextConstants::BLOCK_FORCE_LOWER[strtolower($wt)] ?? null)
             ) {
                 $newIndex = 0;
                 if ($_text = $this->blockRewriteAnalyze($sentence, $i, $newIndex)) {
                     $text .= $_text . ' ';
                     $i    += $newIndex - 1;
-                    dump("> [block] {$_text}");
+                    // 重新定位
+                    $word = $this->words[$i];
+                    ['text' => $wt, 'type' => $type] = $word;
+                }
+            }
+
+            if (TextConstants::TYPE_WORD === $type) {
+                $newIndex = 0;
+                if ($_text = $this->blockAnalyzeISO3166($i, $newIndex)) {
+                    $text .= $_text;
+                    $i    += $newIndex;
+                    // 重新定位
+                    $word = $this->words[$i];
+                    ['text' => $wt, 'type' => $type] = $word;
+                    // 简易处理符号问题
+                    if (TextConstants::TYPE_SYMBOL !== $type) {
+                        $text .= ' ';
+                    }
                 }
             }
 
@@ -86,6 +105,12 @@ final class WordsCombineText
             } elseif (
                 TextConstants::TYPE_WORD === $type
                 && isset(self::$dictForceUpper[strtolower($wt)])
+            ) {
+                $wt = strtoupper($wt);
+            } elseif (
+                TextConstants::TYPE_WORD === $type
+                && 2 === strlen($wt)
+                && isset(SD_ISO3166::ALPHA2[strtolower($wt)])
             ) {
                 $wt = strtoupper($wt);
             } elseif (TextConstants::TYPE_WORD === $type
@@ -193,6 +218,28 @@ final class WordsCombineText
             }
             $next = count($item);
             return join(' ', $item);
+        }
+        return null;
+    }
+
+    protected function blockAnalyzeISO3166(int $i, int &$next): ?string
+    {
+        $word = $this->words[$i];
+        $wt = $word['text'];
+
+        $sentence = SD_ISO3166::NAME_DICT[strtolower(substr($wt, 0, 2))] ?? null;
+        if (empty($sentence)) {
+            return null;
+        }
+        $items = $this->words;
+        foreach ($sentence as $country) {
+            foreach ($country as $_si => $val) {
+                if (strtolower($val) !== strtolower($items[$i + $_si]['text'])) {
+                    continue 2;
+                }
+            }
+            $next = count($country);
+            return join(' ', $country);
         }
         return null;
     }
