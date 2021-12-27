@@ -23,6 +23,8 @@ final class WordsCombineText
 
     protected bool $quotationBegin = false;
 
+    protected bool $iso3166Alpha2ToUpper = false;
+
     static ?array $dictForceUpper       = null;
     static ?array $dictForceLower       = null;
     static ?array $dictFirstLetterUpper = null;
@@ -108,7 +110,8 @@ final class WordsCombineText
             ) {
                 $wt = strtoupper($wt);
             } elseif (
-                TextConstants::TYPE_WORD === $type
+                $this->iso3166Alpha2ToUpper
+                && TextConstants::TYPE_WORD === $type
                 && 2 === strlen($wt)
                 && isset(SD_ISO3166::ALPHA2[strtolower($wt)])
             ) {
