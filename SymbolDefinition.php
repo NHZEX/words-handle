@@ -24,7 +24,7 @@ final class SymbolDefinition
         // 容量
         'fl' => 'fl', // fl oz
         'l' => 'L',
-        'mL' => 'mL',
+        'ml' => 'mL',
         'gal' => 'gal',
         // 重量
         'oz' => 'oz',
