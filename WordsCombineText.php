@@ -214,6 +214,13 @@ final class WordsCombineText
                 // 撇号连接不需要空格 todo 可能需要字典
                 $text .= $wt . TextConstants::SYMBOL_APOSTROPHE . strtolower($items[$i + 2]['text']) . ' ';
                 $i    += 2;
+            } elseif (TextConstants::TYPE_WORD === $type
+                && '-' === $items[$i + 1]['text']
+                && TextConstants::TYPE_WORD === $items[$i + 2]['type']
+            ) {
+                // 连接不需要空格
+                $text .= $wt . '-' . strtolower($items[$i + 2]['text']) . ' ';
+                $i    += 2;
             } elseif (TextConstants::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($i, $word))) {
                 if ('L' === $filling) {
                     $text .= ' ' . $wt;
