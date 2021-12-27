@@ -33,9 +33,6 @@ final class SymbolDefinition
         'g' => 'g',
         'kg' => 'kg',
         'mg' => 'mg',
-        // 温度
-        '°C' => '°C',
-        '°F' => '°F',
     ];
 
     protected static ?array $lengthIndex = null;

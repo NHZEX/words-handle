@@ -85,6 +85,11 @@ final class WordsCombineText
                     $word['text'] = $word['text'] . $_symbol;
                     $blocks[]     = $word;
                     $i            += 1;
+                } elseif ('°' === $nextText && in_array(strtolower($items[$i + 2]['text'] ?? ''), ['c', 'f'])) {
+                    // 温度
+                    $word['text'] = $word['text'] . '°' . strtoupper($items[$i + 2]['text']);
+                    $blocks[]     = $word;
+                    $i            += 2;
                 } else {
                     goto END;
                 }
