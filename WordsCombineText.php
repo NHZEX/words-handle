@@ -6,7 +6,6 @@ use app\Service\TextWord\Symbol\SD_ISO3166;
 use function array_flip;
 use function count;
 use function in_array;
-use function is_numeric;
 use function join;
 use function strlen;
 use function strtolower;
@@ -62,7 +61,7 @@ final class WordsCombineText
         for ($i = 0; $i < $len; $i++) {
             /** @var array{type: string, text: string} $word */
             $word = $items[$i];
-            if (is_numeric($word['text'])) {
+            if (TextConstants::TYPE_NUMBER === $word['type']) {
                 $nextText = $items[$i + 1]['text'] ?? null;
                 if (null === $nextText) {
                     goto END;
@@ -241,8 +240,13 @@ final class WordsCombineText
             } elseif (TextConstants::TYPE_NUMBER === $type && $_text = $this->blockAnalyzeNumber($i, $_next)) {
                 // 数字开头分析
                 $i    += $_next;
-                $text .= $_text . (TextConstants::TYPE_SYMBOL === $items[$i + 1]['type'] ? '' : ' ');
-            }  elseif (TextConstants::TYPE_SYMBOL === $items[$i + 1]['type']) {
+                if (isset($items[$i + 1])) {
+                    $isSpace = TextConstants::TYPE_SYMBOL === $items[$i + 1]['type'];
+                    $text .= $_text . ($isSpace ? '' : ' ');
+                } else {
+                    $text .= $_text;
+                }
+            } elseif (TextConstants::TYPE_SYMBOL === $items[$i + 1]['type']) {
                 // 解决：引号、连接符
                 $text .= $wt;
             } else {
@@ -299,7 +303,7 @@ final class WordsCombineText
     {
 
         $items = $this->words;
-        $item = $items[$i];
+        $item  = $items[$i];
         ['text' => $wt, 'type' => $type] = $item;
         if (
             count($this->words) - 1 >= $i + 3
@@ -317,15 +321,15 @@ final class WordsCombineText
             && TextConstants::TYPE_NUMBER === $items[$i + 2]['type']
         ) {
             // 运算符
-            $_op = '*' === $_op ? 'x' : $_op;
+            $_op    = '*' === $_op ? 'x' : $_op;
             $output = $wt . " {$_op} " . $items[$i + 2]['text'];
-            $next = 2;
+            $next   = 2;
             while (
-                ($_op = SymbolDefinition::isNumberOperator($items[$i + $next + 1]['text']))
+                ($_op = SymbolDefinition::isNumberOperator($items[$i + $next + 1]['text'] ?? ''))
                 && TextConstants::TYPE_NUMBER === $items[$i + $next + 2]['type']
             ) {
                 $output .= " {$_op} " . $items[$i + $next + 2]['text'];
-                $next += 2;
+                $next   += 2;
             }
             return $output;
         } else {

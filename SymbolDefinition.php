@@ -52,6 +52,8 @@ final class SymbolDefinition
         }
         if ('X' === $text || 'x' === $text) {
             $text = '*';
+        } else if ('≈' === $text) {
+            $text = '=';
         }
         return in_array($text, TextConstants::SYMBOL_OPERATOR) ? $text : null;
     }
