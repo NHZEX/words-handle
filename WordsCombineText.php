@@ -207,6 +207,10 @@ final class WordsCombineText
             } elseif (TextConstants::TYPE_LF === $type || TextConstants::TYPE_LF === $items[$i + 1]['type']) {
                 // 换行后面不需要空格
                 $text .= $wt;
+            } elseif ('.' === $wt && '.' === $items[$i + 1]['text'] && '.' === $items[$i + 2]['text']) {
+                // 解决：省略号
+                $text .= '... ';
+                $i    += 2;
             } elseif (TextConstants::TYPE_WORD === $type
                 && TextConstants::SYMBOL_APOSTROPHE === $items[$i + 1]['text']
                 && TextConstants::TYPE_WORD === $items[$i + 2]['type']
@@ -231,9 +235,9 @@ final class WordsCombineText
                 }
             } elseif (TextConstants::TYPE_NUMBER === $type && $_text = $this->blockAnalyzeNumber($i, $_next)) {
                 // 数字开头分析
-                $text .= $_text . ' ';
                 $i    += $_next;
-            } elseif (TextConstants::TYPE_SYMBOL === $items[$i + 1]['type']) {
+                $text .= $_text . (TextConstants::TYPE_SYMBOL === $items[$i + 1]['type'] ? '' : ' ');
+            }  elseif (TextConstants::TYPE_SYMBOL === $items[$i + 1]['type']) {
                 // 解决：引号、连接符
                 $text .= $wt;
             } else {
