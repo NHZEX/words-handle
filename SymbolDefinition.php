@@ -17,6 +17,10 @@ final class SymbolDefinition
         'in' => 'in',
         'ft' => 'ft',
         'yd' => 'yd',
+        'inch' => 'inch',
+        'foot' => 'foot',
+        'yard' => 'yard',
+        'mile' => 'mile',
         // 容量
         'fl' => 'fl', // fl oz
         'l' => 'L',
