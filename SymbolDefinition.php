@@ -2,6 +2,7 @@
 
 namespace app\Service\TextWord;
 
+use function in_array;
 use function strtolower;
 
 final class SymbolDefinition
@@ -35,15 +36,26 @@ final class SymbolDefinition
         // 温度
         '°C' => '°C',
         '°F' => '°F',
-        // 时间
-        'am' => 'AM',
-        'pm' => 'PM',
     ];
 
     protected static ?array $lengthIndex = null;
 
-    public static function findSymbol(string $text): ?string
+    public static function findSymbol(?string $text): ?string
     {
+        if (null === $text) {
+            return null;
+        }
         return self::UNIT_DICT[strtolower($text)] ?? null;
+    }
+
+    public static function isNumberOperator(?string $text): ?string
+    {
+        if (null === $text) {
+            return null;
+        }
+        if ('X' === $text || 'x' === $text) {
+            $text = '*';
+        }
+        return in_array($text, TextConstants::SYMBOL_OPERATOR) ? $text : null;
     }
 }

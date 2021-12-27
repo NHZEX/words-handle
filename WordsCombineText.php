@@ -53,8 +53,52 @@ final class WordsCombineText
         return $this;
     }
 
+    public function blockRewrite()
+    {
+
+        $items  = $this->words;
+        $len    = count($items);
+        $blocks = [];
+        for ($i = 0; $i < $len; $i++) {
+            /** @var array{type: string, text: string} $word */
+            $word = $items[$i];
+            if (is_numeric($word['text'])) {
+                $nextText = $items[$i + 1]['text'] ?? null;
+                if (null === $nextText) {
+                    goto END;
+                } elseif (
+                    3 === strlen($nextText)
+                    && 'x' === $nextText[-1]
+                    && $_symbol = SymbolDefinition::findSymbol(substr($nextText, 0, -1))
+                ) {
+                    // 数字后面跟着的符号
+                    $word['text'] = $word['text'] . $_symbol;
+                    $blocks[]     = $word;
+                    $blocks[]     = [
+                        'type' => TextConstants::TYPE_WORD,
+                        'text' => 'x',
+                        'stat' => null,
+                    ];
+                    $i            += 1;
+                } elseif ($_symbol = SymbolDefinition::findSymbol($nextText)) {
+                    // 数字后面跟着的符号
+                    $word['text'] = $word['text'] . $_symbol;
+                    $blocks[]     = $word;
+                    $i            += 1;
+                } else {
+                    goto END;
+                }
+            } else {
+                END:
+                $blocks[] = $word;
+            }
+        }
+        $this->words = $blocks;
+    }
+
     public function build(): string
     {
+        $this->blockRewrite();
         $this->quotationBegin = false;
         $text                 = '';
         $items                = $this->words;
@@ -170,18 +214,6 @@ final class WordsCombineText
                 // 撇号连接不需要空格 todo 可能需要字典
                 $text .= $wt . TextConstants::SYMBOL_APOSTROPHE . strtolower($items[$i + 2]['text']) . ' ';
                 $i    += 2;
-            } elseif (
-                0 !== $i
-                && TextConstants::TYPE_NUMBER === $items[$i]['type']
-                && ('x' === strtolower($items[$i + 1]['text']) || '*' === $items[$i + 1]['text'])
-                && TextConstants::TYPE_NUMBER === $items[$i + 2]['type']
-            ) {
-                $text .= $wt . 'x' . $items[$i + 2]['text'];
-                $i    += 2;
-                if ($_symbol = SymbolDefinition::findSymbol($items[$i + 1]['text'])) {
-                    $text .= $_symbol . ' ';
-                    $i    += 1;
-                }
             } elseif (TextConstants::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($i, $word))) {
                 if ('L' === $filling) {
                     $text .= ' ' . $wt;
@@ -190,17 +222,13 @@ final class WordsCombineText
                 } else {
                     $text .= $wt;
                 }
-            } elseif (TextConstants::TYPE_NUMBER === $type && is_numeric($wt) && $_text = $this->blockAnalyzeNumber($i, $_next)) {
-                // 数字分析
-                $text .= $_text;
+            } elseif (TextConstants::TYPE_NUMBER === $type && $_text = $this->blockAnalyzeNumber($i, $_next)) {
+                // 数字开头分析
+                $text .= $_text . ' ';
                 $i    += $_next;
             } elseif (TextConstants::TYPE_SYMBOL === $items[$i + 1]['type']) {
                 // 解决：引号、连接符
                 $text .= $wt;
-            } elseif (is_numeric($wt) && $_symbol = SymbolDefinition::findSymbol($items[$i + 1]['text'])) {
-                // 数字后面跟着的符号
-                $text .= $wt . $_symbol . ' ';
-                $i    += 1;
             } else {
                 $text .= $wt . ' ';
             }
@@ -232,7 +260,7 @@ final class WordsCombineText
     protected function blockAnalyzeISO3166(int $i, int &$next): ?string
     {
         $word = $this->words[$i];
-        $wt = $word['text'];
+        $wt   = $word['text'];
 
         $sentence = SD_ISO3166::NAME_DICT[strtolower(substr($wt, 0, 2))] ?? null;
         if (empty($sentence)) {
@@ -253,17 +281,37 @@ final class WordsCombineText
 
     protected function blockAnalyzeNumber(int $i, ?int &$next): ?string
     {
-        ['text' => $wt, 'type' => $type] = $this->words[$i];
+
+        $items = $this->words;
+        $item = $items[$i];
+        ['text' => $wt, 'type' => $type] = $item;
         if (
             count($this->words) - 1 >= $i + 3
             && strlen($wt) <= 2
             && ':' === $this->words[$i + 1]['text']
-            && is_numeric($this->words[$i + 2]['text']) && strlen($this->words[$i + 2]['text']) <= 2
+            && strlen($this->words[$i + 2]['text']) <= 2
             && in_array(strtolower($this->words[$i + 3]['text']), ['am', 'pm'])
         ) {
             // 时间字符串
             $next = 3;
             return "{$wt}:{$this->words[$i + 2]['text']}" . strtoupper($this->words[$i + 3]['text']) . ' ';
+        } elseif (
+            TextConstants::TYPE_NUMBER === $items[$i]['type']
+            && ($_op = SymbolDefinition::isNumberOperator($items[$i + 1]['text']))
+            && TextConstants::TYPE_NUMBER === $items[$i + 2]['type']
+        ) {
+            // 运算符
+            $_op = '*' === $_op ? 'x' : $_op;
+            $output = $wt . " {$_op} " . $items[$i + 2]['text'];
+            $next = 2;
+            while (
+                ($_op = SymbolDefinition::isNumberOperator($items[$i + $next + 1]['text']))
+                && TextConstants::TYPE_NUMBER === $items[$i + $next + 2]['type']
+            ) {
+                $output .= " {$_op} " . $items[$i + $next + 2]['text'];
+                $next += 2;
+            }
+            return $output;
         } else {
             return null;
         }
