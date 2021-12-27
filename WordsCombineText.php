@@ -53,7 +53,7 @@ final class WordsCombineText
         return $this;
     }
 
-    public function blockRewrite()
+    protected function blockRewrite()
     {
 
         $items  = $this->words;
