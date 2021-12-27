@@ -90,6 +90,7 @@ class DictFilter implements \IteratorAggregate
                     // 回退后是错误的
                     throw new \LogicException('回退后不可能无法匹配');
                 } elseif (count($this->buffer) > 1) {
+                    GO_BACK:
                     // 前一次是匹配，叠加后不匹配，回退
 //                    dump("> go back");
                     $goBackWord  = array_pop($this->buffer);
@@ -193,6 +194,8 @@ class DictFilter implements \IteratorAggregate
                         $goBackWord = null;
                     }
                 }
+            } else if (!$this->words->valid() && $matchCount > 1 && !empty($this->buffer)) {
+                goto GO_BACK;
             }
         }
         if (!empty($this->buffer)) {
