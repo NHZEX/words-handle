@@ -194,8 +194,13 @@ class DictFilter implements \IteratorAggregate
                         $goBackWord = null;
                     }
                 }
-            } else if (!$this->words->valid() && $matchCount > 1 && !empty($this->buffer)) {
-                goto GO_BACK;
+            } else if (!$this->words->valid() && $matchCount > 1) {
+                if (count($this->buffer) > 2) {
+                    goto GO_BACK;
+                } elseif (1 === count($this->buffer)) {
+                    yield from $this->buffer;
+                    $this->buffer = [];
+                }
             }
         }
         if (!empty($this->buffer)) {
