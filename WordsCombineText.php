@@ -5,9 +5,12 @@ namespace app\Service\TextWord;
 use app\Service\TextWord\Symbol\SD_ISO3166;
 use function array_flip;
 use function count;
+use function explode;
+use function implode;
 use function in_array;
 use function join;
 use function strlen;
+use function strpos;
 use function strtolower;
 use function strtoupper;
 use function substr;
@@ -24,9 +27,13 @@ final class WordsCombineText
 
     protected bool $iso3166Alpha2ToUpper = false;
 
+    protected ?string $formatStyle = null;
+
     static ?array $dictForceUpper       = null;
     static ?array $dictForceLower       = null;
     static ?array $dictFirstLetterUpper = null;
+
+    const STYLE_FORMAT_FEATURE = 'product_feature';
 
     public function __construct(array $words)
     {
@@ -50,6 +57,14 @@ final class WordsCombineText
         $this->forceFirstLetterUpper = $forceFirstLetterUpper;
 
         return $this;
+    }
+
+    /**
+     * @param string|null $style
+     */
+    public function setFormatStyle(?string $style): void
+    {
+        $this->formatStyle = $style;
     }
 
     protected function blockRewrite()
@@ -145,13 +160,13 @@ final class WordsCombineText
 
             // 词重写1
             if ($this->forceFirstLetterUpper && TextConstants::TYPE_WORD === $type) {
-                $wt = ucfirst($wt);
+                $wt = ucfirst(strtolower($wt));
             }
             if (
                 TextConstants::TYPE_WORD === $type
                 && isset(self::$dictFirstLetterUpper[strtolower($wt)])
             ) {
-                $wt = ucfirst($wt);
+                $wt = ucfirst(strtolower($wt));
             } elseif (
                 TextConstants::TYPE_WORD === $type
                 && isset(self::$dictForceUpper[strtolower($wt)])
@@ -177,21 +192,21 @@ final class WordsCombineText
                 && (':' === $items[$i - 1]['text'] || '.' === $items[$i - 1]['text'])
             ) {
                 // 冒号、句号后跟着的字母大写
-                $wt = ucfirst($wt);
+                $wt = ucfirst(strtolower($wt));
             } elseif (
                 0 !== $i
                 && TextConstants::TYPE_WORD === $type
                 && TextConstants::TYPE_LF === $items[$i - 1]['type']
             ) {
                 // 换行后跟着的字母大写
-                $wt = ucfirst($wt);
+                $wt = ucfirst(strtolower($wt));
             } elseif (
                 $this->quotationBegin
                 && TextConstants::TYPE_WORD === $type
                 && TextConstants::SYMBOL_QUOTATION === $items[$i - 1]['text']
             ) {
                 // 被引用的句子第一个词首字母要大写
-                $wt = ucfirst($wt);
+                $wt = ucfirst(strtolower($wt));
             }
 
             // 词重写2
@@ -253,7 +268,7 @@ final class WordsCombineText
                 $text .= $wt . ' ';
             }
         }
-        return $text;
+        return $this->postProcess($text);
     }
 
     protected function blockRewriteAnalyze(array $sentence, int $i, int &$next): ?string
@@ -351,5 +366,26 @@ final class WordsCombineText
         } else {
             return null;
         }
+    }
+
+    protected function postProcess(string $text): string
+    {
+        switch ($this->formatStyle) {
+            case self::STYLE_FORMAT_FEATURE:
+                $pos = strpos($text, ':');
+                if (false === $pos || 0 === $pos) {
+                    return $text;
+                } else {
+                    $head = substr($text, 0, $pos);
+                    $end = substr($text, $pos);
+                    $headArr = [];
+                    foreach (explode(' ', $head) as $word) {
+                        $headArr[] = ucfirst(strtolower($word));
+                    }
+
+                    return implode(' ', $headArr) . $end;
+                }
+        }
+        return $text;
     }
 }
