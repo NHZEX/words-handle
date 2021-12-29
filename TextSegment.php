@@ -52,7 +52,7 @@ class TextSegment
     protected function tokenizer(string $section): \Generator
     {
         $count = preg_match_all(
-            "/([\p{S}\p{P}])|([\p{L}]+)|(\p{N}+(?:\.\p{N}+)?)/u",
+            "/([\p{S}\p{P}])|(\p{L}+(?:[′'][A-Za-z]*)?)|(\p{N}+(?:\.\p{N}+)?)/u",
             $section,
             $matches,
             PREG_OFFSET_CAPTURE
