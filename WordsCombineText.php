@@ -363,6 +363,9 @@ final class WordsCombineText
         } elseif (in_array($text, TextConstants::SYMBOL_CUT)) {
             return 'R';
         } elseif (in_array($text, TextConstants::SYMBOL_BRACKETS_A)) {
+            if (TextConstants::TYPE_SYMBOL === ($this->words[$i - 1]['type'] ?? '')) {
+                return '';
+            }
             return 'L';
         } elseif (in_array($text, TextConstants::SYMBOL_BRACKETS_B)) {
             return 'R';
