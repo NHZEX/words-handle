@@ -4,13 +4,21 @@ namespace app\Service\TextWord;
 
 class TextConstants
 {
-    public const TYPE_WORD   = 'w';
-    public const TYPE_NUMBER = 'n';
-    public const TYPE_SYMBOL = 'o';
-    public const TYPE_LF     = 'lf';
+
+    public const TYPE_WORD    = 'w';
+    public const TYPE_NUMBER  = 'n';
+    public const TYPE_SYMBOL  = 'o';
+    public const TYPE_LF      = 'lf';
+    public const TYPE_SPACE   = 'sp';
+    public const TYPE_UNKNOWN = 'un';
+
+    public const POSTAG_NULL    = 0;
+    public const POSTAG_NUMBER  = 0x0001;
+    public const POSTAG_UNIT    = 0x0002;
+    public const POSTAG_SYMBOL  = 0x0004;
 
     // 连接符，与字符结合没有空格
-    public const SYMBOL_LINK = ['′', '–', '—', '*', '≈', '°'];
+    public const SYMBOL_LINK     = ['′', '–', '—', '*', '≈', '°'];
     public const SYMBOL_OPERATOR = ['+', '-', '*', '/', '='];
     // 各种括号
     public const SYMBOL_BRACKETS_A = ['(', '[', '{'];
@@ -55,19 +63,19 @@ class TextConstants
         'outside', 'over', 'past', 'regarding',
         'round', 'since', 'through', 'throughout', 'till',
         'to', 'toward', 'until', 'up', 'upon', 'within', 'without',
-        'and', 'or', 'nor', 'so', 'the', 'a', 'an'
+        'and', 'or', 'nor', 'so', 'the', 'a', 'an',
     ];
 
     public const BLOCK_FORCE_LOWER = [
         // 介词，连词，冠词
-        'in' => [
+        'in'      => [
             ['in', 'spite', 'of'],
         ],
         'because' => [
             ['because', 'of'],
         ],
-        'out' => [
-            ['out', 'of']
+        'out'     => [
+            ['out', 'of'],
         ],
     ];
 

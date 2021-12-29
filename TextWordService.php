@@ -100,6 +100,11 @@ class TextWordService
         }
     }
 
+    public function slice2(string $text): ?\Generator
+    {
+        return (new TextSegment($text))->slice();
+    }
+
     public function filterOnlyInvalid(\Generator $items): \Generator
     {
         foreach ($this->filter($items) as $item) {
