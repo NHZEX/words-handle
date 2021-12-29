@@ -4,6 +4,7 @@ namespace app\Service\TextWord;
 
 use app\Service\TextWord\Symbol\SD_ISO3166;
 use function array_flip;
+use function array_map;
 use function count;
 use function explode;
 use function implode;
@@ -107,6 +108,21 @@ final class WordsCombineText
                 } else {
                     goto END;
                 }
+            } elseif (TextConstants::TYPE_WORD === $word['type']
+                && '-' === ($items[$i + 1]['text'] ?? '')
+                && TextConstants::TYPE_WORD === $items[$i + 2]['type']
+            ) {
+                // 连接不需要空格
+                $word['text'] = $word['text'] . '-' . $items[$i + 2]['text'];
+                $i            += 2;
+                while (
+                    '-' === ($items[$i + 1]['text'] ?? '')
+                    && TextConstants::TYPE_WORD === $items[$i + 2]['type']
+                ) {
+                    $word['text'] = $word['text'] . '-' . $items[$i + 2]['text'];
+                    $i   += 2;
+                }
+                $blocks[]     = $word;
             } else {
                 END:
                 $blocks[] = $word;
@@ -247,13 +263,6 @@ final class WordsCombineText
                 // 撇号连接不需要空格 todo 可能需要字典
                 $text .= $wt . strtolower($items[$i + 1]['text']) . ' ';
                 $i    += 1;
-            } elseif (TextConstants::TYPE_WORD === $type
-                && '-' === $items[$i + 1]['text']
-                && TextConstants::TYPE_WORD === $items[$i + 2]['type']
-            ) {
-                // 连接不需要空格
-                $text .= $wt . '-' . strtolower($items[$i + 2]['text']) . ' ';
-                $i    += 2;
             } elseif (TextConstants::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($i, $word))) {
                 if ('L' === $filling) {
                     $text .= ' ' . $wt;
@@ -393,7 +402,8 @@ final class WordsCombineText
                     $end = substr($text, $pos);
                     $headArr = [];
                     foreach (explode(' ', $head) as $word) {
-                        $headArr[] = ucfirst(strtolower($word));
+                        $word = implode('-', array_map(fn($t) => ucfirst(strtolower($t)), explode('-', $word)));
+                        $headArr[] = $word;
                     }
 
                     return implode(' ', $headArr) . $end;
