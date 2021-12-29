@@ -307,7 +307,7 @@ final class WordsCombineText
         $items = $this->words;
         foreach ($sentence as $country) {
             foreach ($country as $_si => $val) {
-                if (strtolower($val) !== strtolower($items[$i + $_si]['text'])) {
+                if (strtolower($val) !== strtolower($items[$i + $_si]['text'] ?? '')) {
                     continue 2;
                 }
             }
