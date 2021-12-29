@@ -259,7 +259,7 @@ final class WordsCombineText
                 // 数字开头分析
                 $i    += $_next;
                 if (isset($items[$i + 1])) {
-                    $isSpace = TextConstants::TYPE_SYMBOL === $items[$i + 1]['type'];
+                    $isSpace = in_array($items[$i + 1]['type'], [TextConstants::TYPE_SYMBOL, TextConstants::TYPE_LF]);
                     $text .= $_text . ($isSpace ? '' : ' ');
                 } else {
                     $text .= $_text;
