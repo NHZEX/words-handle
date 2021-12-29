@@ -190,6 +190,7 @@ final class WordsCombineText
                 && TextConstants::TYPE_WORD === $type
                 && TextConstants::TYPE_SYMBOL === $items[$i - 1]['type']
                 && (':' === $items[$i - 1]['text'] || '.' === $items[$i - 1]['text'])
+                && strtoupper($wt) !== $wt
             ) {
                 // 冒号、句号后跟着的字母大写
                 $wt = ucfirst(strtolower($wt));
@@ -197,13 +198,15 @@ final class WordsCombineText
                 0 !== $i
                 && TextConstants::TYPE_WORD === $type
                 && TextConstants::TYPE_LF === $items[$i - 1]['type']
+                && strtoupper($wt) !== $wt
             ) {
                 // 换行后跟着的字母大写
-                $wt = ucfirst(strtolower($wt));
+                $wt = ucfirst($wt);
             } elseif (
                 $this->quotationBegin
                 && TextConstants::TYPE_WORD === $type
                 && TextConstants::SYMBOL_QUOTATION === $items[$i - 1]['text']
+                && strtoupper($wt) !== $wt
             ) {
                 // 被引用的句子第一个词首字母要大写
                 $wt = ucfirst(strtolower($wt));
