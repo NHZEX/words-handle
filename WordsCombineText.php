@@ -28,6 +28,8 @@ final class WordsCombineText
 
     protected bool $iso3166Alpha2ToUpper = false;
 
+    protected bool $filterSymbol = false;
+
     protected ?string $formatStyle = null;
 
     static ?array $dictForceUpper       = null;
@@ -61,6 +63,14 @@ final class WordsCombineText
     }
 
     /**
+     * @param bool $filterSymbol
+     */
+    public function setFilterSymbol(bool $filterSymbol): void
+    {
+        $this->filterSymbol = $filterSymbol;
+    }
+
+    /**
      * @param string|null $style
      */
     public function setFormatStyle(?string $style): void
@@ -70,7 +80,6 @@ final class WordsCombineText
 
     protected function blockRewrite()
     {
-
         $items  = $this->words;
         $len    = count($items);
         $blocks = [];
@@ -133,7 +142,7 @@ final class WordsCombineText
 
     public function build(): string
     {
-        $this->blockRewrite();
+        $this->preProcess();
         $this->quotationBegin = false;
         $text                 = '';
         $items                = $this->words;
@@ -389,6 +398,22 @@ final class WordsCombineText
             return null;
         }
     }
+
+    protected function preProcess(): void
+    {
+        $items = [];
+        foreach ($this->words as $word) {
+            if ($this->filterSymbol && TextConstants::TYPE_SYMBOL === $word['type']) {
+                continue;
+            }
+
+            $items[] = $word;
+        }
+
+        $this->words = $items;
+        $this->blockRewrite();
+    }
+
 
     protected function postProcess(string $text): string
     {
