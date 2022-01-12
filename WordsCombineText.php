@@ -204,11 +204,19 @@ final class WordsCombineText
                 && isset(SD_ISO3166::ALPHA2[strtolower($wt)])
             ) {
                 $wt = strtoupper($wt);
-            } elseif (TextConstants::TYPE_WORD === $type
+            } elseif (
+                TextConstants::TYPE_WORD === $type
                 && isset(self::$dictForceLower[$_lower = strtolower($wt)])
             ) {
                 // 强制小写词
                 $wt = $_lower;
+            }
+            if (0 === $i
+                && TextConstants::TYPE_WORD === $type &&
+                strtoupper($wt) !== $wt
+            ) {
+                // 句首大写
+                $wt = ucfirst(strtolower($wt));
             }
             if (
                 0 !== $i
