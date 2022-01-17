@@ -117,7 +117,8 @@ final class WordsCombineText
                 } else {
                     goto END;
                 }
-            } elseif (TextConstants::TYPE_WORD === $word['type']
+            } elseif (isset($items[$i + 2])
+                && TextConstants::TYPE_WORD === $word['type']
                 && '-' === ($items[$i + 1]['text'] ?? '')
                 && TextConstants::TYPE_WORD === $items[$i + 2]['type']
             ) {
