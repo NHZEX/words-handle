@@ -340,6 +340,11 @@ final class WordsCombineText
         return $this->postProcess($text);
     }
 
+    public function buildString(): string
+    {
+        return $this->toString($this->build());
+    }
+
     /**
      * @param array<TextNode> $items
      */

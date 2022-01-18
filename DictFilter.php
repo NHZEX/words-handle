@@ -169,7 +169,8 @@ class DictFilter implements \IteratorAggregate
                         }
                     }
                     // 匹配成功
-                    $text         = (new WordsCombineText($this->buffer))->build();
+                    $wct = (new WordsCombineText($this->buffer));
+                    $text = $wct->buildString();
                     $this->buffer = [];
 
                     $model       = $matchItems[0];
