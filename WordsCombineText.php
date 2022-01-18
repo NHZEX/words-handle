@@ -19,7 +19,7 @@ use function ucfirst;
 
 final class WordsCombineText
 {
-    /** @var array<int, array{type: string, text: string}> */
+    /** @var array<int, array{type: string, text: string, stat: int|null}> */
     private array $words;
 
     private bool $forceFirstLetterUpper = false;
@@ -141,184 +141,218 @@ final class WordsCombineText
         $this->words = $blocks;
     }
 
-    public function build(): string
+    /**
+     * @return array<TextNode>
+     */
+    public function toNodes(): array
+    {
+        $nodes = [];
+        foreach ($this->words as $word) {
+            $nodes[] = new TextNode($word['type'], $word['text'], $word['stat']);
+        }
+        return $nodes;
+    }
+
+    public function build(): array
     {
         $this->preProcess();
         $this->quotationBegin = false;
-        $text                 = '';
-        $items                = $this->words;
+        $items                = $this->toNodes();
         $len                  = count($items);
+
+        // array{type: string, text: string, stat: int|null}
+
+        /** @var TextNode[] $output */
+        $output = [];
+
         for ($i = 0; $i < $len; $i++) {
-            /** @var array{type: string, text: string} $word */
-            $word = $this->words[$i];
-            /** @var string $wt */
-            ['text' => $wt, 'type' => $type] = $word;
+            $node = $items[$i];
 
             // 块重写
             if (
-                TextConstants::TYPE_WORD === $word['text']
-                && $sentence = (TextConstants::BLOCK_FORCE_LOWER[strtolower($wt)] ?? null)
+                $node->isWord()
+                && $sentence = (TextConstants::BLOCK_FORCE_LOWER[$node->toLower()] ?? null)
             ) {
                 $newIndex = 0;
-                if ($_text = $this->blockRewriteAnalyze($sentence, $i, $newIndex)) {
-                    $text .= $_text . ' ';
-                    $i    += $newIndex - 1;
+                if ($_text = $this->blockRewriteAnalyze($items, $sentence, $i, $newIndex)) {
+                    $output[] = TextNode::makeWord($_text, $node->stat);
+                    $output[] = TextNode::makeSpace();
+                    $i    += $newIndex;
                     // 重新定位
-                    $word = $this->words[$i];
-                    ['text' => $wt, 'type' => $type] = $word;
+                    $node = $items[$i];
                 }
             }
 
-            if (TextConstants::TYPE_WORD === $type) {
+            if ($node->isWord()) {
                 $newIndex = 0;
                 if ($_text = $this->blockAnalyzeISO3166($i, $newIndex)) {
-                    $text .= $_text;
+                    $output[] = TextNode::makeWord($_text, $node->stat);
                     $i    += $newIndex;
                     // 重新定位
-                    $word = $this->words[$i];
-                    ['text' => $wt, 'type' => $type] = $word;
+                    $node = $items[$i];
                     // 简易处理符号问题
-                    if (TextConstants::TYPE_SYMBOL !== $type) {
-                        $text .= ' ';
+                    if ($node->isSymbol()) {
+                        $output[] = TextNode::makeSpace();
                     }
                 }
             }
 
             // 词重写1
-            if ($this->forceFirstLetterUpper && TextConstants::TYPE_WORD === $type) {
-                $wt = ucfirst(strtolower($wt));
+            if ($this->forceFirstLetterUpper && $node->isWord()) {
+                $node->writeText($node->toFirstCharUpper());
             }
             if (
-                TextConstants::TYPE_WORD === $type
-                && isset(self::$dictFirstLetterUpper[strtolower($wt)])
+                $node->isWord()
+                && isset(self::$dictFirstLetterUpper[$node->toLower()])
             ) {
-                $wt = ucfirst(strtolower($wt));
+                $node = $node->cloneNode($node->toFirstCharUpper());
             } elseif (
-                TextConstants::TYPE_WORD === $type
-                && isset(self::$dictForceUpper[strtolower($wt)])
+                $node->isWord()
+                && isset(self::$dictForceUpper[$node->toLower()])
             ) {
-                $wt = strtoupper($wt);
+                $node = $node->cloneNode($node->toUpper());
             } elseif (
                 $this->iso3166Alpha2ToUpper
-                && TextConstants::TYPE_WORD === $type
-                && 2 === strlen($wt)
-                && isset(SD_ISO3166::ALPHA2[strtolower($wt)])
+                && $node->isWord()
+                && 2 === strlen($node->text)
+                && isset(SD_ISO3166::ALPHA2[$node->toLower()])
             ) {
-                $wt = strtoupper($wt);
+                $node = $node->cloneNode($node->toUpper());
             } elseif (
-                TextConstants::TYPE_WORD === $type
-                && isset(self::$dictForceLower[$_lower = strtolower($wt)])
+                $node->isWord()
+                && isset(self::$dictForceLower[$_lower = $node->toLower()])
             ) {
                 // 强制小写词
-                $wt = $_lower;
-            }
-            if (0 === $i
-                && TextConstants::TYPE_WORD === $type &&
-                strtoupper($wt) !== $wt
-            ) {
-                // 句首大写
-                $wt = ucfirst(strtolower($wt));
+                $node = $node->cloneNode($_lower);
             }
             if (
                 0 !== $i
-                && TextConstants::TYPE_WORD === $type
-                && TextConstants::TYPE_SYMBOL === $items[$i - 1]['type']
-                && (':' === $items[$i - 1]['text'] || '.' === $items[$i - 1]['text'])
-                && strtoupper($wt) !== $wt
+                && $node->isWord()
+                && $items[$i - 1]->isSymbol()
+                && ($items[$i - 1]->isEqual(':') || $items[$i - 1]->isEqual('.'))
+                && !$node->isEqual($node->toUpper())
             ) {
                 // 冒号、句号后跟着的字母大写
-                $wt = ucfirst(strtolower($wt));
+                $node = $node->cloneNode($node->toFirstCharUpper());
             } elseif (
                 0 !== $i
-                && TextConstants::TYPE_WORD === $type
-                && TextConstants::TYPE_LF === $items[$i - 1]['type']
-                && strtoupper($wt) !== $wt
+                && $node->isWord()
+                && $items[$i - 1]->isWrap()
+                && !$node->isEqual($node->toUpper())
             ) {
                 // 换行后跟着的字母大写
-                $wt = ucfirst($wt);
+                $node = $node->cloneNode($node->toFirstCharUpper());
             } elseif (
                 $this->quotationBegin
-                && TextConstants::TYPE_WORD === $type
-                && TextConstants::SYMBOL_QUOTATION === $items[$i - 1]['text']
-                && strtoupper($wt) !== $wt
+                && $node->isWord()
+                && $items[$i - 1]->isEqual(TextConstants::SYMBOL_QUOTATION)
+                && !$node->isEqual($node->toUpper())
             ) {
                 // 被引用的句子第一个词首字母要大写
-                $wt = ucfirst(strtolower($wt));
+                $node = $node->cloneNode($node->toFirstCharUpper());
             }
 
             // 词重写2
             if (
-                TextConstants::TYPE_WORD === $type
-                && strlen($wt) > 1
-                && ($_str = substr($wt, 1))
-                && $_str !== strtoupper($_str)
+                $node->isWord()
+                && $node->len() > 1
+                && ($_str = substr($node->text, 1))
+                && !$node->isEqual($node->toUpper())
                 && $_str !== ($_lower = strtolower($_str))
             ) {
-                $wt = $wt[0] . $_lower;
+                $node = $node->cloneNode($node->text[0] . $_lower);
             }
 
             // 上下文分析结合
             if ($i === $len - 1) {
-                $text .= $wt;
-            } elseif (TextConstants::TYPE_LF === $type || TextConstants::TYPE_LF === $items[$i + 1]['type']) {
+                $output[] = clone $node;
+            } elseif ($node->isWrap() || $items[$i + 1]->isWrap()) {
                 // 换行后面不需要空格
-                $text .= $wt;
-            } elseif ('.' === $wt && '.' === $items[$i + 1]['text'] && '.' === $items[$i + 2]['text']) {
+                $output[] = clone $node;
+            } elseif ($node->isEqual('.') && $items[$i + 1]->isEqual('.') && $items[$i + 2]->isEqual('.')) {
                 // 解决：省略号
-                $text .= '... ';
+                $output[] = TextNode::makeWord('...');
+                $output[] = TextNode::makeSpace();
                 $i    += 2;
-            } elseif (TextConstants::TYPE_WORD === $type
-                && TextConstants::SYMBOL_APOSTROPHE === $items[$i + 1]['text']
-                && TextConstants::TYPE_WORD === $items[$i + 2]['type']
+            } elseif (
+                $node->isWord()
+                && $items[$i + 1]->isEqual(TextConstants::SYMBOL_APOSTROPHE)
+                && $items[$i + 2]->isWord()
             ) {
                 // 撇号连接不需要空格 todo 可能需要字典
-                $text .= $wt . TextConstants::SYMBOL_APOSTROPHE . strtolower($items[$i + 2]['text']) . ' ';
+                $output[] = TextNode::makeWord($node->text . TextConstants::SYMBOL_APOSTROPHE . $items[$i + 2]->toLower());
+                $output[] = TextNode::makeSpace();
                 $i    += 2;
-            } elseif (TextConstants::TYPE_WORD === $type
-                && TextConstants::SYMBOL_APOSTROPHE === $wt[-1]
-                && TextConstants::TYPE_WORD === $items[$i + 1]['type']
+            } elseif ($node->isWord()
+                && TextConstants::SYMBOL_APOSTROPHE === $node->text[-1]
+                && $items[$i + 1]->isWord()
             ) {
                 // 撇号连接不需要空格 todo 可能需要字典
-                $text .= $wt . strtolower($items[$i + 1]['text']) . ' ';
+                $output[] = TextNode::makeWord($node->text . $items[$i + 1]->toLower());
+                $output[] = TextNode::makeSpace();
                 $i    += 1;
-            } elseif (TextConstants::TYPE_SYMBOL === $type && null !== ($filling = $this->symbolSpaceAnalyze($i, $word))) {
+            } elseif ($node->isSymbol() && null !== ($filling = $this->symbolSpaceAnalyze($i, $node))) {
                 if ('L' === $filling) {
-                    $text .= ' ' . $wt;
+                    $output[] = TextNode::makeSpace();
+                    $output[] = clone $node;
                 } elseif ('R' === $filling) {
-                    $text .= $wt . ' ';
+                    $output[] = clone $node;
+                    $output[] = TextNode::makeSpace();
                 } else {
-                    $text .= $wt;
+                    $output[] = clone $node;
                 }
-            } elseif (TextConstants::TYPE_NUMBER === $type && $_text = $this->blockAnalyzeNumber($i, $_next)) {
+            } elseif ($node->isNumber() && $_text = $this->blockAnalyzeNumber($items, $i, $_next)) {
                 // 数字开头分析
                 $i    += $_next;
-                if (isset($items[$i + 1])) {
-                    $isSpace = in_array($items[$i + 1]['type'], [TextConstants::TYPE_SYMBOL, TextConstants::TYPE_LF]);
-                    $text .= $_text . ($isSpace ? '' : ' ');
-                } else {
-                    $text .= $_text;
+                $output[] = TextNode::makeNumber($_text);
+                if (isset($items[$i + 1]) && !($items[$i + 1]->isSymbol() || $items[$i + 1]->isWrap())) {
+                    $output[] = TextNode::makeSpace();
                 }
-            } elseif (TextConstants::TYPE_SYMBOL === $items[$i + 1]['type']) {
+            } elseif ($items[$i + 1]->isSymbol()) {
                 // 解决：引号、连接符
-                $text .= $wt;
+                $output[] = clone $node;
             } else {
-                $text .= $wt . ' ';
+                $output[] = clone $node;
+                $output[] = TextNode::makeSpace();
             }
         }
+
+        return $output;
+    }
+
+    /**
+     * @param array<TextNode> $nodes
+     */
+    public function toString(array $nodes): string
+    {
+        $text = '';
+        foreach ($nodes as $i => $node) {
+            if (0 === $i
+                && $node->isWord()
+                && !$node->isEqual($node->toUpper())
+            ) {
+                // 句首大写
+                $node->writeText($node->toFirstCharUpper());
+            }
+            $text .= $node->text;
+        }
+
         return $this->postProcess($text);
     }
 
-    protected function blockRewriteAnalyze(array $sentence, int $i, int &$next): ?string
+    /**
+     * @param array<TextNode> $items
+     */
+    protected function blockRewriteAnalyze(array $items, array $sentence, int $i, int &$next): ?string
     {
         if (count($sentence) === 0) {
             return null;
         }
-        $items = $this->words;
         foreach ($sentence as $item) {
             foreach ($item as $_si => $val) {
                 if (
-                    TextConstants::TYPE_WORD !== $items[$i + $_si]['type']
-                    && $val !== strtolower($items[$i + $_si]['text'])
+                    $items[$i + $_si]->isWord()
+                    && $val !== $items[$i + $_si]->toLower()
                 ) {
                     continue 2;
                 }
@@ -351,36 +385,36 @@ final class WordsCombineText
         return null;
     }
 
-    protected function blockAnalyzeNumber(int $i, ?int &$next): ?string
+    /**
+     * @param array<TextNode> $items
+     */
+    protected function blockAnalyzeNumber(array $items, int $i, ?int &$next): ?string
     {
-
-        $items = $this->words;
         $item  = $items[$i];
-        ['text' => $wt, 'type' => $type] = $item;
         if (
-            count($this->words) - 1 >= $i + 3
-            && strlen($wt) <= 2
-            && ':' === $this->words[$i + 1]['text']
-            && strlen($this->words[$i + 2]['text']) <= 2
-            && in_array(strtolower($this->words[$i + 3]['text']), ['am', 'pm'])
+            count($items) - 1 >= $i + 3
+            && strlen($item->text) <= 2
+            && ':' === $items[$i + 1]->text
+            && strlen($items[$i + 2]->text) <= 2
+            && in_array($items[$i + 3]->toLower(), ['am', 'pm'])
         ) {
             // 时间字符串
             $next = 3;
-            return "{$wt}:{$this->words[$i + 2]['text']}" . strtoupper($this->words[$i + 3]['text']) . ' ';
+            return "{$item->text}:{$items[$i + 2]->text}" . $items[$i + 3]->toUpper();
         } elseif (
-            TextConstants::TYPE_NUMBER === $items[$i]['type']
-            && ($_op = SymbolDefinition::isNumberOperator($items[$i + 1]['text']))
-            && TextConstants::TYPE_NUMBER === $items[$i + 2]['type']
+            $item->isNumber()
+            && ($_op = SymbolDefinition::isNumberOperator($items[$i + 1]->text))
+            && $items[$i + 2]->isNumber()
         ) {
             // 运算符
             $_op    = '*' === $_op ? 'x' : $_op;
-            $output = $wt . " {$_op} " . $items[$i + 2]['text'];
+            $output = $item->text . " {$_op} " . $items[$i + 2]->text;
             $next   = 2;
             while (
-                ($_op = SymbolDefinition::isNumberOperator($items[$i + $next + 1]['text'] ?? ''))
-                && TextConstants::TYPE_NUMBER === $items[$i + $next + 2]['type']
+                ($_op = SymbolDefinition::isNumberOperator($items[$i + $next + 1]->text ?? ''))
+                && $items[$i + $next + 2]->isNumber()
             ) {
-                $output .= " {$_op} " . $items[$i + $next + 2]['text'];
+                $output .= " {$_op} " . $items[$i + $next + 2]->text;
                 $next   += 2;
             }
             return $output;
@@ -389,9 +423,9 @@ final class WordsCombineText
         }
     }
 
-    protected function symbolSpaceAnalyze(int $i, array $word): ?string
+    protected function symbolSpaceAnalyze(int $i, TextNode $word): ?string
     {
-        ['text' => $text] = $word;
+        $text = $word->text;
         if (in_array($text, TextConstants::SYMBOL_LINK)) {
             return '';
         } elseif (in_array($text, TextConstants::SYMBOL_CUT)) {
