@@ -21,6 +21,7 @@ class TextWordService
     {
         $output = htmlspecialchars_decode($text);
         $output = strip_tags($output);
+        $output = html_entity_decode($output, \ENT_QUOTES | \ENT_SUBSTITUTE | \ENT_HTML401);
         /**$output = preg_replace('#<br\s?/?>#', "\n", $output);**/
         $output = Helper::filterSymbol(str_fullwidth_to_ascii($output));
         return preg_replace("/\n{2,}/u", "\n\n", $output);
