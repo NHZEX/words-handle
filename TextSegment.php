@@ -73,8 +73,9 @@ class TextSegment
                 // 没有捕获
                 $unCaptured = substr($section, $lastPoint, $point - $lastPoint);
                 if ('' !== trim($unCaptured)) {
-                    $unCaptured  = mb_check_encoding($unCaptured, 'utf8') ? $unCaptured : ('0x' . bin2hex($unCaptured));
-                    throw new \UnexpectedValueException("无法处理：未知捕获 $point:({$unCaptured})");
+                    $unHex = '0x' . bin2hex($unCaptured);
+                    $unCaptured  = mb_check_encoding($unCaptured, 'utf8') ? $unCaptured : $unHex;
+                    throw new \UnexpectedValueException("无法处理：未知捕获 $point:({$unCaptured})[$unHex]");
                 }
             }
 

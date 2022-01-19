@@ -11,6 +11,7 @@ class Helper
         return str_replace([
             '&nbsp;',
             "\xc2\xa0", // NBSP
+            "\u{200b}", // Zero Width Space, 0xE2808B
             '、',
             '。',
             '‘',
@@ -21,6 +22,7 @@ class Helper
         ], [
             ' ',
             ' ',
+            '',
             ',',
             '.',
             '\'',
