@@ -18,7 +18,7 @@ class TextConstants
     public const POSTAG_SYMBOL  = 0x0004;
 
     // 连接符，与字符结合没有空格
-    public const SYMBOL_LINK     = ['′', '–', '—', '*', '≈', '°'];
+    public const SYMBOL_LINK     = ['′', '–', '—', '*', '≈'];
     public const SYMBOL_OPERATOR = ['+', '-', '*', '/', '='];
     // 各种括号
     public const SYMBOL_BRACKETS_A = ['(', '[', '{'];
