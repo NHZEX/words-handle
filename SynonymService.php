@@ -2,7 +2,7 @@
 
 namespace app\Service\TextWord;
 
-use app\Model\AmazonWordDictModel;
+use app\Service\TextWord\Dict\DictQueryBadAndWarn;
 use app\Service\TextWord\Synonym\Provider\BaseProvider;
 use app\Service\TextWord\Synonym\Provider\ReversoProvider;
 use app\Service\TextWord\Synonym\Provider\ThesaurusProvider;
@@ -85,7 +85,7 @@ class SynonymService
     {
         $items = $this->queryAllWithAggregation($word);
         foreach ($items as $item) {
-            $result = AmazonWordDictModel::findWord($item->text(), true);
+            $result = DictQueryBadAndWarn::findWord($item->text(), true);
             $item->attr['check'] = empty($result)
                 ? null
                 : ($result->isBad() ? '违禁词' : ($result->isWarn() ? '敏感词' : null));

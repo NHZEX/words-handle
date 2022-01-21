@@ -4,6 +4,7 @@ namespace app\Service\TextWord;
 
 use app\Enum\WordFilterEnum;
 use app\Model\AmazonWordDictModel;
+use app\Service\TextWord\Dict\DictQueryBadAndWarn;
 use app\Service\TextWord\Synonym\WordText;
 use function array_flip;
 use function array_key_last;
@@ -81,7 +82,7 @@ class DictFilter implements \IteratorAggregate
 //                dump("> skip");
                 continue;
             }
-            $matchItems = AmazonWordDictModel::findPhraseRaw($queryText, 2);
+            $matchItems = DictQueryBadAndWarn::findPhraseRaw($queryText, 2);
             $matchCount = $matchItems->count();
 //            dump("> matchCount: {$matchCount}");
 
@@ -96,7 +97,7 @@ class DictFilter implements \IteratorAggregate
                     $goBackWord  = array_pop($this->buffer);
                     $wordsText = $this->joinWord($this->buffer);
                     $queryText  = AmazonWordDictModel::buildQueryString($wordsText);
-                    $_word = AmazonWordDictModel::findEqualRaw($queryText);
+                    $_word = DictQueryBadAndWarn::findEqualRaw($queryText);
                     if (null === $_word) {
                         // 无法匹配，全部弹出
                         yield from $this->buffer;
