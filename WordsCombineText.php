@@ -412,11 +412,12 @@ final class WordsCombineText
             && $items[$i + 2]->isNumber()
         ) {
             // 运算符
-            $_op    = '*' === $_op ? 'x' : $_op;
             $output = $item->text . " {$_op} " . $items[$i + 2]->text;
             $next   = 2;
             while (
-                ($_op = SymbolDefinition::isNumberOperator($items[$i + $next + 1]->text ?? ''))
+                isset($items[$i + $next + 1])
+                && isset($items[$i + $next + 2])
+                && ($_op = SymbolDefinition::isNumberOperator($items[$i + $next + 1]->text))
                 && $items[$i + $next + 2]->isNumber()
             ) {
                 $output .= " {$_op} " . $items[$i + $next + 2]->text;
