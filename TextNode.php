@@ -50,9 +50,19 @@ class TextNode implements \JsonSerializable
         return new self(TextConstants::TYPE_NUMBER, $text);
     }
 
+    public static function makeSymbol(string $text): TextNode
+    {
+        return new self(TextConstants::TYPE_SYMBOL, $text);
+    }
+
     public static function makeSpace(): TextNode
     {
         return new self(TextConstants::TYPE_SPACE, ' ');
+    }
+
+    public static function makeWrap(): TextNode
+    {
+        return new self(TextConstants::TYPE_LF, "\n");
     }
 
     public function isWord(): bool
