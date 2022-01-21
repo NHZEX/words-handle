@@ -6,7 +6,7 @@ use function strlen;
 use function strtolower;
 use function strtoupper;
 
-class TextNode
+class TextNode implements \JsonSerializable
 {
     /**
      * @readonly
@@ -28,6 +28,10 @@ class TextNode
      * @var int|null
      */
     public ?int   $stat;
+
+    private ?string $_lower = null;
+    private ?string $_upper = null;
+    private ?string $_ucFirst = null;
 
     public function __construct(string $type, string $text, ?int $stat = null)
     {
@@ -83,17 +87,26 @@ class TextNode
 
     public function toLower(): string
     {
-        return strtolower($this->text);
+        if (isset($this->_lower)) {
+            return $this->_lower;
+        }
+        return $this->_lower = strtolower($this->text);
     }
 
     public function toUpper(): string
     {
-        return strtoupper($this->text);
+        if (isset($this->_upper)) {
+            return $this->_upper;
+        }
+        return $this->_upper = strtoupper($this->text);
     }
 
     public function toFirstCharUpper(): string
     {
-        return ucfirst($this->toLower());
+        if (isset($this->_ucFirst)) {
+            return $this->_ucFirst;
+        }
+        return $this->_ucFirst = ucfirst($this->toLower());
     }
 
     public function isEqual(string $text): bool
@@ -111,5 +124,14 @@ class TextNode
         $that = clone $this;
         $that->text = $text;
         return $that;
+    }
+
+    public function jsonSerialize(): array
+    {
+        return [
+            'type' => $this->type,
+            'stat' => $this->stat,
+            'text' => $this->text,
+        ];
     }
 }
