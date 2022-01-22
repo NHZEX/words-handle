@@ -22,6 +22,9 @@ class TextSegment
         $this->text = str_replace("\r\n", '\n', $text);
     }
 
+    /**
+     * @return \Generator|iterable<int, TextNode>
+     */
     public function slice(): \Generator
     {
         $section = preg_split('/(\s)/mu', $this->text, 0, PREG_SPLIT_OFFSET_CAPTURE | PREG_SPLIT_DELIM_CAPTURE);
@@ -30,17 +33,9 @@ class TextSegment
             [$w, $pos] = $part;
 
             if ($w === "\n") {
-                yield [
-                    'type' => TextConstants::TYPE_LF,
-                    'stat' => null,
-                    'text' => "\n",
-                ];
+                yield TextNode::makeWrap();
             } else if (!$this->ignoreSpace && ($w === ' ' || $w === "\t")) {
-                yield [
-                    'type' => TextConstants::TYPE_SPACE,
-                    'stat' => null,
-                    'text' => ' ',
-                ];
+                yield TextNode::makeSpace();
             } else if ('' === trim($w)) {
                 continue;
             } else {
@@ -49,6 +44,10 @@ class TextSegment
         }
     }
 
+    /**
+     * @param string $section
+     * @return \Generator|iterable<int, TextNode>
+     */
     protected function tokenizer(string $section): \Generator
     {
         $count = preg_match_all(
@@ -81,23 +80,11 @@ class TextSegment
 
             $lastPoint = $point + $strLen;
             if (-1 !== $symbol[$i][1]) {
-                yield [
-                    'type' => TextConstants::TYPE_SYMBOL,
-                    'stat' => null,
-                    'text' => $str,
-                ];
+                yield TextNode::makeSymbol($str);
             } elseif (-1 !== $word[$i][1]) {
-                yield [
-                    'type' => TextConstants::TYPE_WORD,
-                    'stat' => null,
-                    'text' => $str,
-                ];
+                yield TextNode::makeWord($str);
             } elseif (-1 !== $number[$i][1]) {
-                yield [
-                    'type' => TextConstants::TYPE_NUMBER,
-                    'stat' => null,
-                    'text' => $str,
-                ];
+                yield TextNode::makeNumber($str);
             } else {
                 throw new \UnexpectedValueException("无法处理：未知分支 $point:({$str})");
             }
@@ -105,29 +92,27 @@ class TextSegment
         if (strlen($section) > $lastPoint) {
             $str = substr($section, $lastPoint);
             if (TextConstants::SYMBOL_LF === $str) {
-                yield [
-                    'type' => TextConstants::TYPE_LF,
-                    'stat' => null,
-                    'text' => "\n",
-                ];
+                yield TextNode::makeWrap();
             } elseif ('' !== trim($str)) {
-                yield [
-                    'type' => TextConstants::TYPE_UNKNOWN,
-                    'stat' => null,
-                    'text' => $str,
-                ];
+                yield new TextNode(TextConstants::TYPE_UNKNOWN, $str);
             }
         }
     }
 
+    /**
+     * @param \Generator $it
+     * @return \Generator|iterable<int, TextNode>
+     */
     protected function optimize(\Generator $it): \Generator
     {
+        /** @var TextNode[] $buffer */
         $buffer = [];
         while ($it->valid()) {
+            /** @var TextNode $word */
             $word = $it->current();
             $it->next();
 
-            if (($word['type'] === TextConstants::TYPE_NUMBER || $word['type'] === TextConstants::TYPE_WORD) && 1 === strlen($word['text'])) {
+            if (($word->isNumber() || $word->isWord()) && 1 === strlen($word->text)) {
                 $buffer[] = $word;
             } else {
                 if (count($buffer) > 0) {
@@ -142,20 +127,20 @@ class TextSegment
         }
     }
 
-    public function wordConnect(array $words): array
+    /**
+     * @param array<int, TextNode> $words
+     * @return TextNode
+     */
+    public function wordConnect(array $words): TextNode
     {
         if (1 === count($words)) {
             return $words[0];
         }
         $text = '';
         foreach ($words as $item) {
-            $text .= $item['text'];
+            $text .= $item->text;
         }
-        return [
-            'type' => TextConstants::TYPE_WORD,
-            'stat' => null,
-            'text' => $text,
-        ];
+        return TextNode::makeWord($text);
     }
 
     public function __backup (string $section) {

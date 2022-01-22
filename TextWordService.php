@@ -108,13 +108,13 @@ class TextWordService
 
     public function filterOnlyInvalid(\Generator $items): \Generator
     {
+        /** @var TextNode $item */
         foreach ($this->filter($items) as $item) {
-            ['type' => $type, 'stat' => $stat] = $item;
 
-            if (TextConstants::TYPE_WORD !== $type) {
+            if (!$item->isWord()) {
                 continue;
             }
-            if ($stat > 0) {
+            if ($item->stat > 0) {
                 yield $item;
             }
         }
@@ -136,11 +136,7 @@ class TextWordService
             } else {
                 $type = TextConstants::TYPE_SYMBOL;
             }
-            yield [
-                'type' => $type,
-                'stat' => null,
-                'text' => $item,
-            ];
+            yield new TextNode($type, $item);
         }
     }
 

@@ -22,10 +22,12 @@ use function strlen;
  */
 class DictFilter implements \IteratorAggregate
 {
+    /** @var \Generator|iterable<int, TextNode> */
     private \Generator $words;
 
     static ?array $CUT_WORDS = null;
 
+    /** @var array<int, TextNode> */
     protected array $buffer = [];
 
     public function __construct(\Generator $words)
@@ -40,9 +42,13 @@ class DictFilter implements \IteratorAggregate
         self::$CUT_WORDS = array_flip([...TextConstants::SYMBOL_CUT, ...TextConstants::SYMBOL_SEG]);
     }
 
+    /**
+     * @param array<int, TextNode> $item
+     * @return string
+     */
     protected function joinWord(array $item): string
     {
-        return implode(' ', array_map(fn($v) => $v['text'], $item));
+        return implode(' ', array_map(fn($v) => $v->text, $item));
     }
 
     public function getIterator(): \Traversable
@@ -51,15 +57,15 @@ class DictFilter implements \IteratorAggregate
         $goBackWord = null;
         $matchCount = 0;
         while ($this->words->valid()) {
+            /** @var TextNode $item */
             $item = $this->words->current();
             $this->words->next();
-            ['type' => $type, 'text' => $text] = $item;
 //            dump("input: {$text}");
 
             if (0 === $matchCount
                 && (
-                    TextConstants::TYPE_LF === $type
-                    || (TextConstants::TYPE_SYMBOL === $type && isset(self::$CUT_WORDS[$text]))
+                    $item->isWrap()
+                    || ($item->isSymbol() && isset(self::$CUT_WORDS[$item->text]))
                 )
             ) {
                 yield from $this->buffer;
@@ -161,16 +167,16 @@ class DictFilter implements \IteratorAggregate
                     }
                     if (count($this->buffer) > 1) {
                         // 处理符号误粘连问题
-                        if ($this->buffer[0]['type'] !== TextConstants::TYPE_WORD) {
+                        if (!$this->buffer[0]->isWord()) {
                             yield array_shift($this->buffer);
                         } elseif (
-                            $this->buffer[array_key_last($this->buffer)]['type'] === TextConstants::TYPE_SYMBOL
+                            $this->buffer[array_key_last($this->buffer)]->isSymbol()
                         ) {
                             $_tmpSymbolLast = array_pop($this->buffer);
                         }
                     }
                     // 匹配成功
-                    $wct = (new WordsCombineText($this->buffer));
+                    $wct = WordsCombineText::makeFromNodes($this->buffer);
                     $text = $wct->buildString();
                     $this->buffer = [];
 
@@ -182,11 +188,8 @@ class DictFilter implements \IteratorAggregate
                     } else {
                         $stat = 0;
                     }
-                    yield [
-                        'type' => TextConstants::TYPE_WORD,
-                        'text' => $text,
-                        'stat' => $stat,
-                    ];
+                    yield TextNode::makeWord($text, $stat);
+
                     if (isset($_tmpSymbolLast)) {
                         yield $_tmpSymbolLast;
                         $_tmpSymbolLast = null;
