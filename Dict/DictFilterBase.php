@@ -40,11 +40,14 @@ abstract class DictFilterBase implements \IteratorAggregate
     }
 
     /**
-     * @param \Iterator<int, TextNode>|\Generator $data
+     * @param \Iterator<int, TextNode>|\IteratorAggregate|DictFilterBase $data
      * @return $this
      */
-    public static function input(iterable $data): DictFilterBase
+    public static function input(\Traversable $data): DictFilterBase
     {
+        if ($data instanceof \IteratorAggregate) {
+            $data = $data->getIterator();
+        }
         return new static($data);
     }
 
