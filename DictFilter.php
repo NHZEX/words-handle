@@ -5,7 +5,6 @@ namespace app\Service\TextWord;
 use app\Enum\WordFilterEnum;
 use app\Model\AmazonWordDictModel;
 use app\Service\TextWord\Dict\DictQueryBadAndWarn;
-use app\Service\TextWord\Synonym\WordText;
 use function array_flip;
 use function array_key_last;
 use function array_map;
@@ -18,19 +17,26 @@ use function str_starts_with;
 use function strlen;
 
 /**
- * @implements \IteratorAggregate<string, WordText>
+ * @implements \IteratorAggregate<string, TextNode>
  */
 class DictFilter implements \IteratorAggregate
 {
-    /** @var \Generator|iterable<int, TextNode> */
-    private \Generator $words;
+    /**
+     * @var \Iterator<int, TextNode>
+     */
+    private \Iterator $words;
 
     static ?array $CUT_WORDS = null;
 
-    /** @var array<int, TextNode> */
+    /**
+     * @var array<int, TextNode>
+     */
     protected array $buffer = [];
 
-    public function __construct(\Generator $words)
+    /**
+     * @param \Iterator<int, TextNode> $words
+     */
+    public function __construct(\Iterator $words)
     {
         $this->words = $words;
 

@@ -101,9 +101,12 @@ class TextWordService
         }
     }
 
-    public function slice2(string $text): ?\Generator
+    /**
+     * @deprecated
+     */
+    public function slice2(string $text): \Iterator
     {
-        return (new TextSegment($text))->slice();
+        return (new TextSegment($text))->getIterator();
     }
 
     public function filterOnlyInvalid(\Generator $items): \Generator
@@ -120,7 +123,7 @@ class TextWordService
         }
     }
 
-    public function filter(\Generator $items): \Generator
+    public function filter(\Iterator $items): \Generator
     {
         yield from (new DictFilter($items));
     }

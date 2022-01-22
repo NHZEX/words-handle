@@ -2,6 +2,7 @@
 
 namespace app\Service\TextWord;
 
+use IteratorAggregate;
 use function bin2hex;
 use function count;
 use function preg_match_all;
@@ -11,7 +12,10 @@ use function strlen;
 use function substr;
 use function trim;
 
-class TextSegment
+/**
+ * @implements IteratorAggregate<int, TextNode>
+ */
+class TextSegment implements IteratorAggregate
 {
     private string $text;
 
@@ -20,6 +24,20 @@ class TextSegment
     public function __construct(string $text)
     {
         $this->text = str_replace("\r\n", '\n', $text);
+    }
+
+    public static function input(string $text): TextSegment
+    {
+        return new self($text);
+    }
+
+    /**
+     * @return \Iterator<int, TextNode>|iterable<int, TextNode>
+     */
+    #[\ReturnTypeWillChange]
+    public function getIterator(): \Iterator
+    {
+        return $this->slice();
     }
 
     /**
