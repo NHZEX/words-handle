@@ -13,13 +13,12 @@ use function join;
 use function strlen;
 use function strpos;
 use function strtolower;
-use function strtoupper;
 use function substr;
 use function ucfirst;
 
 final class WordsCombineText
 {
-    /** @var array<int, array{type: string, text: string, stat: int|null}> */
+    /** @var array<int, TextNode> */
     private array $words;
 
     private bool $forceFirstLetterUpper = false;
@@ -38,11 +37,25 @@ final class WordsCombineText
 
     const STYLE_FORMAT_FEATURE = 'product_feature';
 
-    public function __construct(array $words)
+    protected function __construct(array $words)
     {
         $this->words = $words;
 
         $this->initDict();
+    }
+
+    public static function makeFromArray(array $words): WordsCombineText
+    {
+        $nodes = [];
+        foreach ($words as $word) {
+            $nodes[] = new TextNode($word['type'], $word['text'], $word['stat']);
+        }
+        return new self($nodes);
+    }
+
+    public static function makeFromNodes(array $nodes): WordsCombineText
+    {
+        return new self($nodes);
     }
 
     protected function initDict()
@@ -78,16 +91,19 @@ final class WordsCombineText
         $this->formatStyle = $style;
     }
 
-    protected function blockRewrite()
+    /**
+     * @param array<int, TextNode> $items
+     * @return array<int, TextNode>
+     */
+    protected function blockRewrite(array $items): array
     {
-        $items  = $this->words;
         $len    = count($items);
+        /** @var array<int, TextNode> $blocks */
         $blocks = [];
         for ($i = 0; $i < $len; $i++) {
-            /** @var array{type: string, text: string} $word */
             $word = $items[$i];
-            if (TextConstants::TYPE_NUMBER === $word['type']) {
-                $nextText = $items[$i + 1]['text'] ?? null;
+            if ($word->isNumber()) {
+                $nextText = $items[$i + 1]->text ?? null;
                 if (null === $nextText) {
                     goto END;
                 } elseif (
@@ -96,40 +112,36 @@ final class WordsCombineText
                     && $_symbol = SymbolDefinition::findSymbol(substr($nextText, 0, -1))
                 ) {
                     // 数字后面跟着的符号
-                    $word['text'] = $word['text'] . $_symbol;
-                    $blocks[]     = $word;
-                    $blocks[]     = [
-                        'type' => TextConstants::TYPE_WORD,
-                        'text' => 'x',
-                        'stat' => null,
-                    ];
+                    $blocks[]     = $word->cloneNode($word->text . $_symbol);
+                    $blocks[]     = TextNode::makeWord('x');
                     $i            += 1;
                 } elseif ($_symbol = SymbolDefinition::findSymbol($nextText)) {
                     // 数字后面跟着的符号
-                    $word['text'] = $word['text'] . $_symbol;
-                    $blocks[]     = $word;
+                    $blocks[]     = $word->cloneNode($word->text . $_symbol);
                     $i            += 1;
-                } elseif ('°' === $nextText && in_array(strtolower($items[$i + 2]['text'] ?? ''), ['c', 'f'])) {
+                } elseif ('°' === $nextText && isset($items[$i + 2]) && in_array($items[$i + 2]->toLower(), ['c', 'f'])) {
                     // 温度
-                    $word['text'] = $word['text'] . '°' . strtoupper($items[$i + 2]['text']);
-                    $blocks[]     = $word;
+                    $blocks[]     = $word->cloneNode($word->text . '°' . $items[$i + 2]->toUpper());
                     $i            += 2;
                 } else {
                     goto END;
                 }
-            } elseif (isset($items[$i + 2])
-                && TextConstants::TYPE_WORD === $word['type']
-                && '-' === ($items[$i + 1]['text'] ?? '')
-                && TextConstants::TYPE_WORD === $items[$i + 2]['type']
+            } elseif (
+                isset($items[$i + 1])
+                && isset($items[$i + 2])
+                && $word->isWord()
+                && '-' === $items[$i + 1]->text
+                && $items[$i + 2]->isWord()
             ) {
                 // 连接不需要空格
-                $word['text'] = $word['text'] . '-' . $items[$i + 2]['text'];
+                $word = $word->cloneNode($word->text . '-' . $items[$i + 2]->text);
                 $i            += 2;
                 while (
-                    '-' === ($items[$i + 1]['text'] ?? '')
-                    && TextConstants::TYPE_WORD === $items[$i + 2]['type']
+                    isset($items[$i + 1])
+                    && '-' === $items[$i + 1]->text
+                    && $items[$i + 2]->isWord()
                 ) {
-                    $word['text'] = $word['text'] . '-' . $items[$i + 2]['text'];
+                    $word = $word->cloneNode($word->text . '-' . $items[$i + 2]->text);
                     $i   += 2;
                 }
                 $blocks[]     = $word;
@@ -138,26 +150,13 @@ final class WordsCombineText
                 $blocks[] = $word;
             }
         }
-        $this->words = $blocks;
-    }
-
-    /**
-     * @return array<TextNode>
-     */
-    public function toNodes(): array
-    {
-        $nodes = [];
-        foreach ($this->words as $word) {
-            $nodes[] = new TextNode($word['type'], $word['text'], $word['stat']);
-        }
-        return $nodes;
+        return $blocks;
     }
 
     public function build(): array
     {
-        $this->preProcess();
+        $items                = $this->preProcess($this->words);
         $this->quotationBegin = false;
-        $items                = $this->toNodes();
         $len                  = count($items);
 
         // array{type: string, text: string, stat: int|null}
@@ -185,7 +184,7 @@ final class WordsCombineText
 
             if ($node->isWord()) {
                 $newIndex = 0;
-                if ($_text = $this->blockAnalyzeISO3166($i, $newIndex)) {
+                if ($_text = $this->blockAnalyzeISO3166($items, $i, $newIndex)) {
                     $output[] = TextNode::makeWord($_text, $node->stat);
                     $i    += $newIndex;
                     // 重新定位
@@ -291,7 +290,7 @@ final class WordsCombineText
                 $output[] = TextNode::makeWord($node->text . $items[$i + 1]->toLower());
                 $output[] = TextNode::makeSpace();
                 $i    += 1;
-            } elseif ($node->isSymbol() && null !== ($filling = $this->symbolSpaceAnalyze($i, $node))) {
+            } elseif ($node->isSymbol() && null !== ($filling = $this->symbolSpaceAnalyze($items, $i, $node))) {
                 if ('L' === $filling) {
                     $output[] = TextNode::makeSpace();
                     $output[] = clone $node;
@@ -368,10 +367,16 @@ final class WordsCombineText
         return null;
     }
 
-    protected function blockAnalyzeISO3166(int $i, int &$next): ?string
+    /**
+     * @param array<int, TextNode> $items
+     * @param int   $i
+     * @param int   $next
+     * @return string|null
+     */
+    protected function blockAnalyzeISO3166(array $items, int $i, int &$next): ?string
     {
-        $word = $this->words[$i];
-        $wt   = $word['text'];
+        $word = $items[$i];
+        $wt   = $word->text;
 
         $sentence = SD_ISO3166::NAME_DICT[strtolower(substr($wt, 0, 2))] ?? null;
         if (empty($sentence)) {
@@ -380,7 +385,7 @@ final class WordsCombineText
         $items = $this->words;
         foreach ($sentence as $country) {
             foreach ($country as $_si => $val) {
-                if (strtolower($val) !== strtolower($items[$i + $_si]['text'] ?? '')) {
+                if (strtolower($val) !== strtolower($items[$i + $_si]->text ?? '')) {
                     continue 2;
                 }
             }
@@ -429,7 +434,13 @@ final class WordsCombineText
         }
     }
 
-    protected function symbolSpaceAnalyze(int $i, TextNode $word): ?string
+    /**
+     * @param array<int, TextNode>    $items
+     * @param int      $i
+     * @param TextNode $word
+     * @return string|null
+     */
+    protected function symbolSpaceAnalyze(array $items, int $i, TextNode $word): ?string
     {
         $text = $word->text;
         if (in_array($text, TextConstants::SYMBOL_LINK)) {
@@ -437,7 +448,7 @@ final class WordsCombineText
         } elseif (in_array($text, TextConstants::SYMBOL_CUT)) {
             return 'R';
         } elseif (in_array($text, TextConstants::SYMBOL_BRACKETS_A)) {
-            if (TextConstants::TYPE_SYMBOL === ($this->words[$i - 1]['type'] ?? '')) {
+            if (isset($items[$i - 1]) && $items[$i - 1]->isSymbol()) {
                 return '';
             }
             return 'L';
@@ -448,19 +459,22 @@ final class WordsCombineText
         }
     }
 
-    protected function preProcess(): void
+    /**
+     * @param array<int, TextNode> $nodes
+     * @return array<int, TextNode>
+     */
+    protected function preProcess(array $nodes): array
     {
         $items = [];
-        foreach ($this->words as $word) {
-            if ($this->filterSymbol && TextConstants::TYPE_SYMBOL === $word['type']) {
+        foreach ($nodes as $word) {
+            if ($this->filterSymbol && $word->isSymbol()) {
                 continue;
             }
 
             $items[] = $word;
         }
 
-        $this->words = $items;
-        $this->blockRewrite();
+        return $this->blockRewrite($items);
     }
 
 
