@@ -1,37 +1,33 @@
 <?php
 
-namespace app\Service\TextWord;
+namespace app\Service\TextWord\Dict;
 
-use app\Enum\WordFilterEnum;
 use app\Model\AmazonWordDictModel;
-use app\Service\TextWord\Dict\DictQueryBadAndWarn;
+use app\Service\TextWord\TextConstants;
+use app\Service\TextWord\TextNode;
+use app\Service\TextWord\WordsCombineText;
 use function array_flip;
-use function array_key_last;
 use function array_map;
 use function array_merge;
 use function array_pop;
 use function array_shift;
-use function count;
 use function implode;
-use function str_starts_with;
 use function strlen;
+use function strpos;
 
-/**
- * @implements \IteratorAggregate<string, TextNode>
- */
-class DictFilter implements \IteratorAggregate
+abstract class DictFilterBase implements \IteratorAggregate
 {
     /**
      * @var \Iterator<int, TextNode>
      */
-    private \Iterator $words;
-
-    static ?array $CUT_WORDS = null;
+    protected \Iterator $words;
 
     /**
      * @var array<int, TextNode>
      */
     protected array $buffer = [];
+
+    static ?array $CUT_WORDS = null;
 
     /**
      * @param \Iterator<int, TextNode> $words
@@ -43,10 +39,25 @@ class DictFilter implements \IteratorAggregate
         $this->initDict();
     }
 
+    /**
+     * @param \Iterator<int, TextNode>|\Generator $data
+     * @return $this
+     */
+    public static function input(iterable $data): DictFilterBase
+    {
+        return new static($data);
+    }
+
     protected function initDict()
     {
         self::$CUT_WORDS = array_flip([...TextConstants::SYMBOL_CUT, ...TextConstants::SYMBOL_SEG]);
     }
+
+    abstract protected function exactQuery(string $queryText): ?array;
+
+    abstract protected function prefixQuery(string $queryText): array;
+
+    abstract protected function buildText(string $text, array $word): TextNode;
 
     /**
      * @param array<int, TextNode> $item
@@ -66,11 +77,12 @@ class DictFilter implements \IteratorAggregate
             /** @var TextNode $item */
             $item = $this->words->current();
             $this->words->next();
-//            dump("input: {$text}");
+            // dump("input: {$text}");
 
             if (0 === $matchCount
                 && (
                     $item->isWrap()
+                    || ($item->stat !== null && $item->stat > 0)
                     || ($item->isSymbol() && isset(self::$CUT_WORDS[$item->text]))
                 )
             ) {
@@ -89,14 +101,14 @@ class DictFilter implements \IteratorAggregate
             QUERY_MATCH:
             $wordsText = $this->joinWord($this->buffer);
             $queryText  = AmazonWordDictModel::buildQueryString($wordsText);
-//            dump("> {$wordsText} > {$queryText}");
+            // dump("> {$wordsText} > {$queryText}");
             if (empty($queryText)) {
-//                dump("> skip");
+                // dump("> skip");
                 continue;
             }
-            $matchItems = DictQueryBadAndWarn::findPhraseRaw($queryText, 2);
-            $matchCount = $matchItems->count();
-//            dump("> matchCount: {$matchCount}");
+            $matchItems = $this->prefixQuery($queryText);
+            $matchCount = count($matchItems);
+            // dump("> matchCount: {$matchCount}");
 
             if (0 === $matchCount) {
                 if (null !== $goBackWord) {
@@ -105,11 +117,11 @@ class DictFilter implements \IteratorAggregate
                 } elseif (count($this->buffer) > 1) {
                     GO_BACK:
                     // 前一次是匹配，叠加后不匹配，回退
-//                    dump("> go back");
+                    // dump("> go back");
                     $goBackWord  = array_pop($this->buffer);
                     $wordsText = $this->joinWord($this->buffer);
                     $queryText  = AmazonWordDictModel::buildQueryString($wordsText);
-                    $_word = DictQueryBadAndWarn::findEqualRaw($queryText);
+                    $_word = $this->exactQuery($queryText);
                     if (null === $_word) {
                         // 无法匹配，全部弹出
                         yield from $this->buffer;
@@ -124,11 +136,11 @@ class DictFilter implements \IteratorAggregate
                 }
             } elseif (1 === $matchCount) {
                 if ($queryText === $matchItems[0]['query']) {
-//                    dump('>-prefix:equal');
+                    // dump('>-prefix:equal');
                     // 完全匹配
                     goto SUCCESS;
                 } elseif (str_starts_with($matchItems[0]['query'], $queryText)) {
-//                    dump('>-prefix');
+                    // dump('>-prefix');
                     // 前缀匹配
                     $matchQuery = $matchItems[0]['query'];
                     $_tmpBuffer = [];
@@ -139,17 +151,17 @@ class DictFilter implements \IteratorAggregate
                         $_tmpBuffer[] = $item;
                         $wordsText = $this->joinWord(array_merge($this->buffer, $_tmpBuffer));
                         $queryText = AmazonWordDictModel::buildQueryString($wordsText);
-//                        dump(">-prefix: {$wordsText} > {$queryText}");
+                        // dump(">-prefix: {$wordsText} > {$queryText}");
                         $matchPos = strpos($matchQuery, $queryText);
                         if (0 !== $matchPos) {
-//                            dump('>-prefix:fail');
+                            // dump('>-prefix:fail');
                             // 无法匹配，全部弹出
                             yield from $this->buffer;
                             $this->buffer = $_tmpBuffer;
                             continue 2;
                         }
                         if (strlen($matchQuery) === strlen($queryText)) {
-//                            dump('>-prefix:success');
+                            // dump('>-prefix:success');
                             // 完全匹配，作为一个整体
                             $this->buffer = array_merge($this->buffer, $_tmpBuffer);
                             goto SUCCESS;
@@ -186,15 +198,8 @@ class DictFilter implements \IteratorAggregate
                     $text = $wct->buildString();
                     $this->buffer = [];
 
-                    $model       = $matchItems[0];
-                    if ($model->isBad()) {
-                        $stat = WordFilterEnum::_BAD;
-                    } elseif ($model->isWarn()) {
-                        $stat = WordFilterEnum::_WARN;
-                    } else {
-                        $stat = 0;
-                    }
-                    yield TextNode::makeWord($text, $stat);
+                    $_word = $matchItems[0];
+                    yield $this->buildText($text, $_word);
 
                     if (isset($_tmpSymbolLast)) {
                         yield $_tmpSymbolLast;

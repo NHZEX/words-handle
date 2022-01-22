@@ -2,6 +2,7 @@
 
 namespace app\Service\TextWord;
 
+use app\Service\TextWord\Dict\DictTypeFilter;
 use function bin2hex;
 use function count;
 use function htmlspecialchars_decode;
@@ -125,7 +126,7 @@ class TextWordService
 
     public function filter(\Iterator $items): \Generator
     {
-        yield from (new DictFilter($items));
+        yield from DictTypeFilter::input($items);
     }
 
     public function wordTypeGuess(iterable $items): \Generator
