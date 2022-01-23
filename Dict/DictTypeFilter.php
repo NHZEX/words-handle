@@ -9,15 +9,23 @@ use app\Service\TextWord\TextNode;
  */
 class DictTypeFilter extends DictFilterBase
 {
+    private DictTypeQuery $dict;
+
+    protected function initDict()
+    {
+        parent::initDict();
+
+        $this->dict = new DictTypeQuery();
+    }
+
     protected function exactQuery(string $queryText): ?array
     {
-        $data = DictQueryBadAndWarn::findEqualRaw($queryText);
-        return $data ? $data->toArray() : null;
+        return $this->dict->exactQuery($queryText, 1)[0] ?? null;
     }
 
     protected function prefixQuery(string $queryText): array
     {
-        return DictQueryBadAndWarn::findPhraseRaw($queryText, 2)->toArray();
+        return $this->dict->prefixQuery($queryText, 2);
     }
 
     protected function buildText(string $text, array $word): TextNode
