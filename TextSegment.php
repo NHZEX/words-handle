@@ -3,6 +3,7 @@
 namespace app\Service\TextWord;
 
 use IteratorAggregate;
+use UnexpectedValueException;
 use function bin2hex;
 use function count;
 use function preg_match_all;
@@ -21,6 +22,8 @@ class TextSegment implements IteratorAggregate
 
     protected bool $ignoreSpace = true;
 
+    protected bool $ignoreIgnoreUTF8Character = false;
+
     public function __construct(string $text)
     {
         $this->text = str_replace("\r\n", '\n', $text);
@@ -29,6 +32,12 @@ class TextSegment implements IteratorAggregate
     public static function input(string $text): TextSegment
     {
         return new self($text);
+    }
+
+    public function setIgnoreInvalidCharacter(bool $ignore): static
+    {
+        $this->ignoreIgnoreUTF8Character = $ignore;
+        return $this;
     }
 
     /**
@@ -45,6 +54,14 @@ class TextSegment implements IteratorAggregate
      */
     public function slice(): \Generator
     {
+        if ($this->ignoreIgnoreUTF8Character) {
+            $result = mb_convert_encoding($this->text, 'UTF-8', 'UTF-8');
+            if (false === $result) {
+                throw new UnexpectedValueException("无法编解码的无效字符串（non-utf8 characters）");
+            }
+            $this->text = $result;
+        }
+
         $section = preg_split('/(\s)/mu', $this->text, 0, PREG_SPLIT_OFFSET_CAPTURE | PREG_SPLIT_DELIM_CAPTURE);
 
         foreach ($section as $part) {
@@ -92,7 +109,7 @@ class TextSegment implements IteratorAggregate
                 if ('' !== trim($unCaptured)) {
                     $unHex = '0x' . bin2hex($unCaptured);
                     $unCaptured  = mb_check_encoding($unCaptured, 'utf8') ? $unCaptured : $unHex;
-                    throw new \UnexpectedValueException("无法处理：未知捕获 $point:({$unCaptured})[$unHex]");
+                    throw new \UnexpectedValueException("无法处理：未知捕获 $point:({$unCaptured})[$unHex], location: " . substr($section, 0, 16));
                 }
             }
 
