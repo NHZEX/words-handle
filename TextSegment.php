@@ -7,8 +7,10 @@ use UnexpectedValueException;
 use function bin2hex;
 use function count;
 use function in_array;
+use function log_warning;
 use function preg_match_all;
 use function preg_split;
+use function sprintf;
 use function str_replace;
 use function strlen;
 use function substr;
@@ -23,10 +25,12 @@ class TextSegment implements IteratorAggregate
 
     protected bool $ignoreSpace = true;
 
-    protected bool $ignoreIgnoreUTF8Character = false;
+    protected bool $ignoreUTF8Character = false;
+
+    protected bool $ignore4CharError = false;
 
     protected array $ignoreChar = [
-        "\xef\xb8\x8f", // 造成问题 "❤️"
+//        "\xef\xb8\x8f", // 造成问题 "❤️"
     ];
 
     public function __construct(string $text)
@@ -41,7 +45,13 @@ class TextSegment implements IteratorAggregate
 
     public function setIgnoreInvalidCharacter(bool $ignore): static
     {
-        $this->ignoreIgnoreUTF8Character = $ignore;
+        $this->ignoreUTF8Character = $ignore;
+        return $this;
+    }
+
+    public function setIgnore4CharError(bool $ignore4CharError): static
+    {
+        $this->ignore4CharError = $ignore4CharError;
         return $this;
     }
 
@@ -59,7 +69,7 @@ class TextSegment implements IteratorAggregate
      */
     public function slice(): \Generator
     {
-        if ($this->ignoreIgnoreUTF8Character) {
+        if ($this->ignoreUTF8Character) {
             $result = mb_convert_encoding($this->text, 'UTF-8', 'UTF-8');
             if (false === $result) {
                 throw new UnexpectedValueException("无法编解码的无效字符串（non-utf8 characters）");
@@ -114,7 +124,12 @@ class TextSegment implements IteratorAggregate
                 if ('' !== trim($unCaptured) && !in_array($unCaptured, $this->ignoreChar)) {
                     $unHex = '0x' . bin2hex($unCaptured);
                     $unCaptured  = mb_check_encoding($unCaptured, 'utf8') ? $unCaptured : $unHex;
-                    throw new \UnexpectedValueException("无法处理：未知捕获 $point:({$unCaptured})[$unHex], location: " . substr($section, 0, 16));
+                    $errMessage = sprintf('无法处理：未知捕获 %s:(%s)[%s], location: (%s)', $point, $unCaptured, $unHex, substr($section, 0, 16));
+                    if ($this->ignore4CharError && strlen($unCaptured) <= 4) {
+                        log_warning($errMessage);
+                    } else {
+                        throw new \UnexpectedValueException($errMessage);
+                    }
                 }
             }
 

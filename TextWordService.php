@@ -152,7 +152,10 @@ class TextWordService
     public function textCheckInvalid(string $text): array
     {
         $output = [];
-        $it = $this->filterOnlyInvalid(TextSegment::input($this->clean($text))->setIgnoreInvalidCharacter(true)->getIterator());
+        $it = $this->filterOnlyInvalid(TextSegment::input($this->clean($text))
+            ->setIgnoreInvalidCharacter(true)
+            ->setIgnore4CharError(true)
+            ->getIterator());
         foreach ($it as $item) {
             $output[] = $item;
         }
