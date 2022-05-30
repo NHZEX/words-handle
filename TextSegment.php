@@ -6,6 +6,7 @@ use IteratorAggregate;
 use UnexpectedValueException;
 use function bin2hex;
 use function count;
+use function in_array;
 use function preg_match_all;
 use function preg_split;
 use function str_replace;
@@ -23,6 +24,10 @@ class TextSegment implements IteratorAggregate
     protected bool $ignoreSpace = true;
 
     protected bool $ignoreIgnoreUTF8Character = false;
+
+    protected array $ignoreChar = [
+        "\xef\xb8\x8f", // 造成问题 "❤️"
+    ];
 
     public function __construct(string $text)
     {
@@ -83,7 +88,7 @@ class TextSegment implements IteratorAggregate
      * @param string $section
      * @return \Generator|iterable<int, TextNode>
      */
-    protected function tokenizer(string $section): \Generator
+    protected function tokenizer(string $section, int $pos): \Generator
     {
         $count = preg_match_all(
             "/([\p{S}\p{P}])|(\p{L}+(?:[′'][A-Za-z]*)?)|(\p{N}+(?:\.\p{N}+)?)/u",
@@ -106,7 +111,7 @@ class TextSegment implements IteratorAggregate
             if ($point > $lastPoint) {
                 // 没有捕获
                 $unCaptured = substr($section, $lastPoint, $point - $lastPoint);
-                if ('' !== trim($unCaptured)) {
+                if ('' !== trim($unCaptured) && !in_array($unCaptured, $this->ignoreChar)) {
                     $unHex = '0x' . bin2hex($unCaptured);
                     $unCaptured  = mb_check_encoding($unCaptured, 'utf8') ? $unCaptured : $unHex;
                     throw new \UnexpectedValueException("无法处理：未知捕获 $point:({$unCaptured})[$unHex], location: " . substr($section, 0, 16));
