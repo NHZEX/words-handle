@@ -346,23 +346,32 @@ final class WordsCombineText
 
     /**
      * @param array<TextNode> $items
+     * @param string[][] $sentence
      */
     protected function blockRewriteAnalyze(array $items, array $sentence, int $i, int &$next): ?string
     {
         if (count($sentence) === 0) {
             return null;
         }
-        foreach ($sentence as $item) {
-            foreach ($item as $_si => $val) {
+        foreach ($sentence as $part) {
+            if (empty($part)) {
+                continue;
+            }
+            $isOk = true;
+            foreach ($part as $_si => $val) {
                 if (
-                    $items[$i + $_si]->isWord()
-                    && $val !== $items[$i + $_si]->toLower()
+                    !isset($items[$i + $_si])
+                    || !$items[$i + $_si]->isWord()
+                    || !$val !== $items[$i + $_si]->toLower()
                 ) {
-                    continue 2;
+                    $isOk = false;
+                    break;
                 }
             }
-            $next = count($item);
-            return join(' ', $item);
+            if ($isOk) {
+                $next = count($part);
+                return join(' ', $part);
+            }
         }
         return null;
     }
