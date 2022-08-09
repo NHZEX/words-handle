@@ -2,7 +2,11 @@
 
 namespace app\Service\TextWord;
 
+use function array_keys;
+use function array_map;
 use function in_array;
+use function max;
+use function strlen;
 use function strtolower;
 
 final class SymbolDefinition
@@ -37,9 +41,17 @@ final class SymbolDefinition
 
     protected static ?array $lengthIndex = null;
 
+    protected static ?int $length = null;
+
     public static function findSymbol(?string $text): ?string
     {
         if (null === $text) {
+            return null;
+        }
+        if (null === self::$length) {
+            self::$length = max(...array_map('\strlen', array_keys(self::UNIT_DICT)));
+        }
+        if (strlen($text) > self::$length) {
             return null;
         }
         return self::UNIT_DICT[strtolower($text)] ?? null;
