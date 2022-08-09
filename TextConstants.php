@@ -48,6 +48,8 @@ class TextConstants
         'bbq',
         'pp',
         'abs',
+        // 单位
+        'pc',
     ];
 
     public const FORCE_LOWER = [
