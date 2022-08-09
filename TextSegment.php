@@ -64,6 +64,16 @@ class TextSegment implements IteratorAggregate
         return $this->slice();
     }
 
+    public function toArray(): array
+    {
+        $words = [];
+        foreach ($this->slice() as $item) {
+            $words[] = $item;
+        }
+
+        return $words;
+    }
+
     /**
      * @return \Generator|iterable<int, TextNode>
      */
