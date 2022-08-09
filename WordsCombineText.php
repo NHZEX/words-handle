@@ -112,12 +112,12 @@ final class WordsCombineText
                     && $_symbol = SymbolDefinition::findSymbol(substr($nextText, 0, -1))
                 ) {
                     // 数字后面跟着的符号
-                    $blocks[]     = $word->cloneNode($word->text . $_symbol);
+                    $blocks[]     = $word->cloneNode($word->text . ' ' . $_symbol);
                     $blocks[]     = TextNode::makeWord('x');
                     $i            += 1;
                 } elseif ($_symbol = SymbolDefinition::findSymbol($nextText)) {
                     // 数字后面跟着的符号
-                    $blocks[]     = $word->cloneNode($word->text . $_symbol);
+                    $blocks[]     = $word->cloneNode($word->text . ' ' . $_symbol);
                     $i            += 1;
                 } elseif ('°' === $nextText && isset($items[$i + 2]) && in_array($items[$i + 2]->toLower(), ['c', 'f'])) {
                     // 温度
