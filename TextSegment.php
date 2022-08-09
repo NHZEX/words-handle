@@ -167,7 +167,11 @@ class TextSegment implements IteratorAggregate
             $word = $it->current();
             $it->next();
 
-            if (($word->isNumber() || $word->isWord()) && 1 === strlen($word->text)) {
+            if (
+                // 分析连结单字母词
+                ($word->isNumber() || $word->isWord()) && 1 === strlen($word->text)
+                && null === SymbolDefinition::isNumberOperator($word->text)
+            ) {
                 $buffer[] = $word;
             } else {
                 if (count($buffer) > 0) {
