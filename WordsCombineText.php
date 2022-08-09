@@ -413,13 +413,26 @@ final class WordsCombineText
         if (
             count($items) - 1 >= $i + 3
             && strlen($item->text) <= 2
+            && ctype_digit($item->text)
             && ':' === $items[$i + 1]->text
             && strlen($items[$i + 2]->text) <= 2
+            && ctype_digit($items[$i + 2]->text)
             && in_array($items[$i + 3]->toLower(), ['am', 'pm'])
         ) {
-            // 时间字符串
+            // 时间字符串带后缀
             $next = 3;
             return "{$item->text}:{$items[$i + 2]->text}" . $items[$i + 3]->toUpper();
+        } elseif (
+            count($items) - 1 >= $i + 2
+            && strlen($item->text) <= 2
+            && ctype_digit($item->text)
+            && ':' === $items[$i + 1]->text
+            && strlen($items[$i + 2]->text) <= 2
+            && ctype_digit($items[$i + 2]->text)
+        ) {
+            // 时间字符串
+            $next = 2;
+            return "{$item->text}:{$items[$i + 2]->text}";
         } elseif (
             $item->isNumber()
             && ($_op = SymbolDefinition::isNumberOperator($items[$i + 1]->text))
