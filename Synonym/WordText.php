@@ -2,7 +2,10 @@
 
 namespace app\Service\TextWord\Synonym;
 
-class WordText implements \Stringable, \JsonSerializable
+use JsonSerializable;
+use Stringable;
+
+class WordText implements Stringable, JsonSerializable
 {
     protected bool $relevant;
 

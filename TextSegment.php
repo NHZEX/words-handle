@@ -2,7 +2,10 @@
 
 namespace app\Service\TextWord;
 
+use Generator;
+use Iterator;
 use IteratorAggregate;
+use ReturnTypeWillChange;
 use UnexpectedValueException;
 use function bin2hex;
 use function count;
@@ -56,10 +59,10 @@ class TextSegment implements IteratorAggregate
     }
 
     /**
-     * @return \Iterator<int, TextNode>|iterable<int, TextNode>
+     * @return Iterator<int, TextNode>|iterable<int, TextNode>
      */
-    #[\ReturnTypeWillChange]
-    public function getIterator(): \Iterator
+    #[ReturnTypeWillChange]
+    public function getIterator(): Iterator
     {
         return $this->slice();
     }
@@ -75,9 +78,9 @@ class TextSegment implements IteratorAggregate
     }
 
     /**
-     * @return \Generator|iterable<int, TextNode>
+     * @return Generator|iterable<int, TextNode>
      */
-    public function slice(): \Generator
+    public function slice(): Generator
     {
         if ($this->ignoreUTF8Character) {
             $result = mb_convert_encoding($this->text, 'UTF-8', 'UTF-8');
@@ -94,9 +97,9 @@ class TextSegment implements IteratorAggregate
 
             if ($w === "\n") {
                 yield TextNode::makeWrap();
-            } else if (!$this->ignoreSpace && ($w === ' ' || $w === "\t")) {
+            } elseif (!$this->ignoreSpace && ($w === ' ' || $w === "\t")) {
                 yield TextNode::makeSpace();
-            } else if ('' === trim($w)) {
+            } elseif ('' === trim($w)) {
                 continue;
             } else {
                 yield from $this->optimize($this->tokenizer($w, $pos));
@@ -106,9 +109,9 @@ class TextSegment implements IteratorAggregate
 
     /**
      * @param string $section
-     * @return \Generator|iterable<int, TextNode>
+     * @return Generator|iterable<int, TextNode>
      */
-    protected function tokenizer(string $section, int $pos): \Generator
+    protected function tokenizer(string $section, int $pos): Generator
     {
         $count = preg_match_all(
             "/([\p{S}\p{P}])|(\p{L}+(?:[′'][A-Za-z]*)?)|(\p{N}+(?:\.\p{N}+)?)/u",
@@ -125,7 +128,7 @@ class TextSegment implements IteratorAggregate
         for ($i = 0; $i < $matchLen; $i++) {
             [$str, $point] = $all[$i];
             if (-1 === $point) {
-                throw new \UnexpectedValueException('无法处理：超出范围 -1');
+                throw new UnexpectedValueException('无法处理：超出范围 -1');
             }
             $strLen = strlen($str);
             if ($point > $lastPoint) {
@@ -138,7 +141,7 @@ class TextSegment implements IteratorAggregate
                     if ($this->ignore4CharError && strlen($unCaptured) <= 4) {
                         log_warning($errMessage);
                     } else {
-                        throw new \UnexpectedValueException($errMessage);
+                        throw new UnexpectedValueException($errMessage);
                     }
                 }
             }
@@ -151,7 +154,7 @@ class TextSegment implements IteratorAggregate
             } elseif (-1 !== $number[$i][1]) {
                 yield TextNode::makeNumber($str);
             } else {
-                throw new \UnexpectedValueException("无法处理：未知分支 $point:({$str})");
+                throw new UnexpectedValueException("无法处理：未知分支 $point:({$str})");
             }
         }
         if (strlen($section) > $lastPoint) {
@@ -165,10 +168,10 @@ class TextSegment implements IteratorAggregate
     }
 
     /**
-     * @param \Generator $it
-     * @return \Generator|iterable<int, TextNode>
+     * @param Generator $it
+     * @return Generator|iterable<int, TextNode>
      */
-    protected function optimize(\Generator $it): \Generator
+    protected function optimize(Generator $it): Generator
     {
         /** @var TextNode[] $buffer */
         $buffer = [];
@@ -212,7 +215,8 @@ class TextSegment implements IteratorAggregate
         return TextNode::makeWord($text);
     }
 
-    public function __backup (string $section) {
+    public function __backup(string $section)
+    {
         $count = preg_match_all(
             "/([\p{L}]+)|([\p{S}\p{P}])|(\p{N}+)/u",
             $section,
@@ -228,7 +232,7 @@ class TextSegment implements IteratorAggregate
         for ($i = 0; $i < $matchLen; $i++) {
             [$str, $point] = $all[$i];
             if (-1 === $point) {
-                throw new \UnexpectedValueException('无法处理：超出范围 -1');
+                throw new UnexpectedValueException('无法处理：超出范围 -1');
             }
             $strLen = strlen($str);
             if ($point > $lastPoint) {
@@ -236,7 +240,7 @@ class TextSegment implements IteratorAggregate
                 $unCaptured = substr($section, $lastPoint, $point - $lastPoint);
                 if ('' !== trim($unCaptured)) {
                     $unCaptured  = mb_check_encoding($unCaptured, 'utf8') ? $unCaptured : ('0x' . bin2hex($unCaptured));
-                    throw new \UnexpectedValueException("无法处理：未知捕获 $point:({$unCaptured})");
+                    throw new UnexpectedValueException("无法处理：未知捕获 $point:({$unCaptured})");
                 }
             }
 
@@ -260,7 +264,7 @@ class TextSegment implements IteratorAggregate
                     'text' => $str,
                 ];
             } else {
-                throw new \UnexpectedValueException("无法处理：未知分支 $point:({$str})");
+                throw new UnexpectedValueException("无法处理：未知分支 $point:({$str})");
             }
         }
         if (strlen($section) > $lastPoint) {

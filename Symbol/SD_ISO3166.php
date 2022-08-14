@@ -4,7 +4,7 @@ namespace app\Service\TextWord\Symbol;
 
 class SD_ISO3166
 {
-    const NAME_DICT = [
+    public const NAME_DICT = [
         'an' => [
             [
                 'Andorra',
@@ -792,7 +792,7 @@ class SD_ISO3166
         ],
     ];
 
-    const ALPHA2 = [
+    public const ALPHA2 = [
         'aw' => '533',
         'af' => '004',
         'ao' => '024',
@@ -1044,7 +1044,7 @@ class SD_ISO3166
         'zw' => '716',
     ];
 
-    const ALPHA3 = [
+    public const ALPHA3 = [
         'abw' => '533',
         'afg' => '004',
         'ago' => '024',

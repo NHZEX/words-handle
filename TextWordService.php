@@ -3,6 +3,9 @@
 namespace app\Service\TextWord;
 
 use app\Service\TextWord\Dict\DictTypeFilter;
+use Generator;
+use Iterator;
+use UnexpectedValueException;
 use function bin2hex;
 use function count;
 use function htmlspecialchars_decode;
@@ -15,6 +18,9 @@ use function strlen;
 use function substr;
 use function trim;
 use function Zxin\Str\str_fullwidth_to_ascii;
+use const ENT_HTML401;
+use const ENT_QUOTES;
+use const ENT_SUBSTITUTE;
 
 class TextWordService
 {
@@ -22,13 +28,13 @@ class TextWordService
     {
         $output = htmlspecialchars_decode($text);
         $output = strip_tags($output);
-        $output = html_entity_decode($output, \ENT_QUOTES | \ENT_SUBSTITUTE | \ENT_HTML401);
+        $output = html_entity_decode($output, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401);
         /**$output = preg_replace('#<br\s?/?>#', "\n", $output);**/
         $output = Helper::filterSymbol(str_fullwidth_to_ascii($output));
         return preg_replace("/\n{2,}/u", "\n\n", $output);
     }
 
-    public function slice(string $text): ?\Generator
+    public function slice(string $text): ?Generator
     {
         $count = preg_match_all(
             "/(?<w>[\p{Ll}\p{Lu}\p{Lt}]+)|(?<s>[\p{P}\p{S}])|(?<n>\p{N}+(?:\.\p{N}+)?)|(?<lf>\n)/u",
@@ -47,7 +53,7 @@ class TextWordService
         for ($i = 0; $i < $matchLen; $i++) {
             [$str, $point] = $all[$i];
             if (-1 === $point) {
-                throw new \UnexpectedValueException('无法处理：超出范围 -1');
+                throw new UnexpectedValueException('无法处理：超出范围 -1');
             }
             $strLen = strlen($str);
             if ($point > $lastPoint) {
@@ -55,7 +61,7 @@ class TextWordService
                 $unCaptured = substr($text, $lastPoint, $point - $lastPoint);
                 if ('' !== trim($unCaptured)) {
                     $unCaptured  = mb_check_encoding($unCaptured, 'utf8') ? $unCaptured : ('0x' . bin2hex($unCaptured));
-                    throw new \UnexpectedValueException("无法处理：未知捕获 $point:({$unCaptured})");
+                    throw new UnexpectedValueException("无法处理：未知捕获 $point:({$unCaptured})");
                 }
             }
 
@@ -85,7 +91,7 @@ class TextWordService
                     'text' => "\n",
                 ];
             } else {
-                throw new \UnexpectedValueException("无法处理：未知分支 $point:({$str})");
+                throw new UnexpectedValueException("无法处理：未知分支 $point:({$str})");
             }
         }
         if (strlen($text) > $lastPoint) {
@@ -105,16 +111,15 @@ class TextWordService
     /**
      * @deprecated
      */
-    public function slice2(string $text): \Iterator
+    public function slice2(string $text): Iterator
     {
         return (new TextSegment($text))->getIterator();
     }
 
-    public function filterOnlyInvalid(\Generator $items): \Generator
+    public function filterOnlyInvalid(iterable $items): Generator
     {
         /** @var TextNode $item */
         foreach ($this->filter($items) as $item) {
-
             if (!$item->isWord()) {
                 continue;
             }
@@ -124,12 +129,12 @@ class TextWordService
         }
     }
 
-    public function filter(\Iterator $items): \Generator
+    public function filter(iterable $items): Generator
     {
         yield from DictTypeFilter::input($items);
     }
 
-    public function wordTypeGuess(iterable $items): \Generator
+    public function wordTypeGuess(iterable $items): Generator
     {
         foreach ($items as $item) {
             $isWord = preg_match('/^[\p{L}\p{Pd}\p{Zs}]+$/u', $item) > 0;

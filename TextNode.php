@@ -2,11 +2,12 @@
 
 namespace app\Service\TextWord;
 
+use JsonSerializable;
 use function strlen;
 use function strtolower;
 use function strtoupper;
 
-class TextNode implements \JsonSerializable
+class TextNode implements JsonSerializable
 {
     /**
      * @readonly

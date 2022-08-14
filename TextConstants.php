@@ -4,7 +4,6 @@ namespace app\Service\TextWord;
 
 class TextConstants
 {
-
     public const TYPE_WORD    = 'w';
     public const TYPE_NUMBER  = 'n';
     public const TYPE_SYMBOL  = 'o';

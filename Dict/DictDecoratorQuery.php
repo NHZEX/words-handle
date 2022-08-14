@@ -9,7 +9,7 @@ final class DictDecoratorQuery extends DictQueryBase
 {
     protected function getDict(): array
     {
-        return (new AmazonWordDictModel)
+        return (new AmazonWordDictModel())
             ->where('genre', WordFilterEnum::_BASE)
             ->column(['id', 'genre', 'word', 'query', 'options']);
     }

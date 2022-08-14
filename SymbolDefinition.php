@@ -11,7 +11,7 @@ use function strtolower;
 
 final class SymbolDefinition
 {
-    const UNIT_DICT = [
+    public const UNIT_DICT = [
         // 长度
         'μm' => 'μm',
         'nm' => 'nm',
@@ -64,7 +64,7 @@ final class SymbolDefinition
         }
         if ('X' === $text || 'x' === $text) {
             $text = '*';
-        } else if ('≈' === $text) {
+        } elseif ('≈' === $text) {
             $text = '=';
         }
         if (in_array($text, TextConstants::SYMBOL_OPERATOR)) {

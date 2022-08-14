@@ -41,7 +41,7 @@ class DictQueryBadAndWarn
     /**
      * @return AmazonWordDictModel|null
      */
-    public static function findEqualRaw(string $query):? AmazonWordDictModel
+    public static function findEqualRaw(string $query): ?AmazonWordDictModel
     {
         // todo 缓冲查询
         return (new AmazonWordDictModel())

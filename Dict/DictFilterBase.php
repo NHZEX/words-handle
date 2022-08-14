@@ -6,33 +6,38 @@ use app\Model\AmazonWordDictModel;
 use app\Service\TextWord\TextConstants;
 use app\Service\TextWord\TextNode;
 use app\Service\TextWord\WordsCombineText;
+use Iterator;
+use IteratorAggregate;
+use LogicException;
+use Traversable;
 use function array_flip;
 use function array_map;
 use function array_merge;
 use function array_pop;
 use function array_shift;
+use function count;
 use function implode;
 use function strlen;
 use function strpos;
 
-abstract class DictFilterBase implements \IteratorAggregate
+abstract class DictFilterBase implements IteratorAggregate
 {
     /**
-     * @var \Iterator<int, TextNode>
+     * @var Iterator<int, TextNode>
      */
-    protected \Iterator $words;
+    protected Iterator $words;
 
     /**
      * @var array<int, TextNode>
      */
     protected array $buffer = [];
 
-    static ?array $CUT_WORDS = null;
+    public static ?array $CUT_WORDS = null;
 
     /**
-     * @param \Iterator<int, TextNode> $words
+     * @param Iterator<int, TextNode> $words
      */
-    public function __construct(\Iterator $words)
+    public function __construct(Iterator $words)
     {
         $this->words = $words;
 
@@ -40,12 +45,12 @@ abstract class DictFilterBase implements \IteratorAggregate
     }
 
     /**
-     * @param \Iterator<int, TextNode>|\IteratorAggregate|DictFilterBase $data
+     * @param Iterator<int, TextNode>|IteratorAggregate|DictFilterBase $data
      * @return $this
      */
-    public static function input(\Traversable $data): DictFilterBase
+    public static function input(iterable $data): DictFilterBase
     {
-        if ($data instanceof \IteratorAggregate) {
+        if ($data instanceof IteratorAggregate) {
             $data = $data->getIterator();
         }
         return new static($data);
@@ -68,10 +73,10 @@ abstract class DictFilterBase implements \IteratorAggregate
      */
     protected function joinWord(array $item): string
     {
-        return implode(' ', array_map(fn($v) => $v->text, $item));
+        return implode(' ', array_map(fn ($v) => $v->text, $item));
     }
 
-    public function getIterator(): \Traversable
+    public function getIterator(): Traversable
     {
         $this->buffer = [];
         $goBackWord = null;
@@ -116,7 +121,7 @@ abstract class DictFilterBase implements \IteratorAggregate
             if (0 === $matchCount) {
                 if (null !== $goBackWord) {
                     // 回退后是错误的
-                    throw new \LogicException('回退后不可能无法匹配');
+                    throw new LogicException('回退后不可能无法匹配');
                 } elseif (count($this->buffer) > 1) {
                     GO_BACK:
                     // 前一次是匹配，叠加后不匹配，回退
@@ -171,7 +176,7 @@ abstract class DictFilterBase implements \IteratorAggregate
                         }
                     }
                     if (true === $this->words->valid()) {
-                        throw new \LogicException('不可预知的情况，执行异常的分支');
+                        throw new LogicException('不可预知的情况，执行异常的分支');
                     }
                     // 没有可匹配的词，弹出
                     yield from $this->buffer;
@@ -184,7 +189,7 @@ abstract class DictFilterBase implements \IteratorAggregate
 
                 SUCCESS: {
                     if (count($matchItems) > 1) {
-                        throw new \LogicException('不允许存在多个匹配值');
+                        throw new LogicException('不允许存在多个匹配值');
                     }
                     if (count($this->buffer) > 1) {
                         // 处理符号误粘连问题
@@ -213,7 +218,7 @@ abstract class DictFilterBase implements \IteratorAggregate
                         $goBackWord = null;
                     }
                 }
-            } else if (!$this->words->valid() && $matchCount > 1) {
+            } elseif (!$this->words->valid() && $matchCount > 1) {
                 if (count($this->buffer) > 2) {
                     goto GO_BACK;
                 } elseif (1 === count($this->buffer)) {

@@ -31,11 +31,11 @@ final class WordsCombineText
 
     protected ?string $formatStyle = null;
 
-    static ?array $dictForceUpper       = null;
-    static ?array $dictForceLower       = null;
-    static ?array $dictFirstLetterUpper = null;
+    public static ?array $dictForceUpper       = null;
+    public static ?array $dictForceLower       = null;
+    public static ?array $dictFirstLetterUpper = null;
 
-    const STYLE_FORMAT_FEATURE = 'product_feature';
+    public const STYLE_FORMAT_FEATURE = 'product_feature';
 
     protected function __construct(array $words)
     {
@@ -512,7 +512,7 @@ final class WordsCombineText
                     $end = substr($text, $pos);
                     $headArr = [];
                     foreach (explode(' ', $head) as $word) {
-                        $word = implode('-', array_map(fn($t) => ucfirst(strtolower($t)), explode('-', $word)));
+                        $word = implode('-', array_map(fn ($t) => ucfirst(strtolower($t)), explode('-', $word)));
                         $headArr[] = $word;
                     }
 

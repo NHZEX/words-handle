@@ -11,7 +11,6 @@ use function urlencode;
 
 class ThesaurusProvider extends BaseProvider
 {
-
     public static function getType(): string
     {
         return 'thesaurus';
