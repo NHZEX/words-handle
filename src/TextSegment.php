@@ -1,6 +1,6 @@
 <?php
 
-namespace app\Service\TextWord;
+namespace zxin\TextWord;
 
 use Generator;
 use Iterator;
@@ -10,7 +10,6 @@ use UnexpectedValueException;
 use function bin2hex;
 use function count;
 use function in_array;
-use function log_warning;
 use function preg_match_all;
 use function preg_split;
 use function sprintf;
@@ -139,7 +138,7 @@ class TextSegment implements IteratorAggregate
                     $unCaptured  = mb_check_encoding($unCaptured, 'utf8') ? $unCaptured : $unHex;
                     $errMessage = sprintf('无法处理：未知捕获 %s:(%s)[%s], location: (%s)', $point, $unCaptured, $unHex, substr($section, 0, 16));
                     if ($this->ignore4CharError && strlen($unCaptured) <= 4) {
-                        log_warning($errMessage);
+                        // log_warning($errMessage);
                     } else {
                         throw new UnexpectedValueException($errMessage);
                     }

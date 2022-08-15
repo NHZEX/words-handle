@@ -1,6 +1,6 @@
 <?php
 
-namespace app\Service\TextWord\Dict;
+namespace zxin\TextWord\Dict;
 
 use Fuse\Fuse;
 use function array_map;

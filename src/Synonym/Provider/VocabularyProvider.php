@@ -1,8 +1,8 @@
 <?php
 
-namespace app\Service\TextWord\Synonym\Provider;
+namespace zxin\TextWord\Synonym\Provider;
 
-use app\Service\TextWord\Synonym\WordText;
+use zxin\TextWord\Synonym\WordText;
 use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\StreamInterface;
 use Symfony\Component\DomCrawler\Crawler;

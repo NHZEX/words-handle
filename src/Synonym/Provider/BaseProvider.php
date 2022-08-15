@@ -1,9 +1,9 @@
 <?php
 
-namespace app\Service\TextWord\Synonym\Provider;
+namespace zxin\TextWord\Synonym\Provider;
 
 use app\Model\SynonymStoreModel;
-use app\Service\TextWord\Synonym\WordText;
+use zxin\TextWord\Synonym\WordText;
 use Composer\CaBundle\CaBundle;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;

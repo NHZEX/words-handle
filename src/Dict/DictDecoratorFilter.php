@@ -1,9 +1,9 @@
 <?php
 
-namespace app\Service\TextWord\Dict;
+namespace zxin\TextWord\Dict;
 
-use app\Service\TextWord\TextNode;
-use function json_decode_ex;
+use zxin\TextWord\TextNode;
+use function json_decode;
 use function strtoupper;
 
 class DictDecoratorFilter extends DictFilterBase
@@ -29,7 +29,7 @@ class DictDecoratorFilter extends DictFilterBase
 
     protected function buildText(string $text, array $word): TextNode
     {
-        if ($word['options'] && $_options = json_decode_ex($word['options'])) {
+        if ($word['options'] && $_options = json_decode($word['options'], true)) {
             $convFormat = $_options['convFormat'] ?? 0;
             if (1 === $convFormat) {
                 $text = strtoupper($text);

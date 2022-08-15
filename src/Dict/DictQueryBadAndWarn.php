@@ -1,8 +1,8 @@
 <?php
 
-namespace app\Service\TextWord\Dict;
+namespace zxin\TextWord\Dict;
 
-use app\Enum\WordFilterEnum;
+use zxin\TextWord\Enum\WordFilterEnum;
 use app\Model\AmazonWordDictModel;
 use think\Collection;
 

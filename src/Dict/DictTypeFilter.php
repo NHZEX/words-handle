@@ -1,8 +1,8 @@
 <?php
 
-namespace app\Service\TextWord\Dict;
+namespace zxin\TextWord\Dict;
 
-use app\Service\TextWord\TextNode;
+use zxin\TextWord\TextNode;
 
 /**
  * @implements \IteratorAggregate<string, TextNode>

@@ -1,8 +1,8 @@
 <?php
 
-namespace app\Service\TextWord;
+namespace zxin\TextWord;
 
-use app\Service\TextWord\Symbol\SD_ISO3166;
+use zxin\TextWord\Symbol\SD_ISO3166;
 use function array_flip;
 use function array_map;
 use function count;

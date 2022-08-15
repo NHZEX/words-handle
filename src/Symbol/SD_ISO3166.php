@@ -1,6 +1,6 @@
 <?php
 
-namespace app\Service\TextWord\Symbol;
+namespace zxin\TextWord\Symbol;
 
 class SD_ISO3166
 {

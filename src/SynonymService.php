@@ -1,12 +1,12 @@
 <?php
 
-namespace app\Service\TextWord;
+namespace zxin\TextWord;
 
-use app\Service\TextWord\Dict\DictQueryBadAndWarn;
-use app\Service\TextWord\Synonym\Provider\BaseProvider;
-use app\Service\TextWord\Synonym\Provider\ReversoProvider;
-use app\Service\TextWord\Synonym\Provider\ThesaurusProvider;
-use app\Service\TextWord\Synonym\WordText;
+use zxin\TextWord\Dict\DictQueryBadAndWarn;
+use zxin\TextWord\Synonym\Provider\BaseProvider;
+use zxin\TextWord\Synonym\Provider\ReversoProvider;
+use zxin\TextWord\Synonym\Provider\ThesaurusProvider;
+use zxin\TextWord\Synonym\WordText;
 use GuzzleHttp\Promise\Utils;
 use think\Container;
 use function array_merge;

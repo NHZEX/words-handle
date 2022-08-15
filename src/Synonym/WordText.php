@@ -1,6 +1,6 @@
 <?php
 
-namespace app\Service\TextWord\Synonym;
+namespace zxin\TextWord\Synonym;
 
 use JsonSerializable;
 use Stringable;

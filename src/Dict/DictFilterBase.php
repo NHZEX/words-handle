@@ -1,11 +1,11 @@
 <?php
 
-namespace app\Service\TextWord\Dict;
+namespace zxin\TextWord\Dict;
 
 use app\Model\AmazonWordDictModel;
-use app\Service\TextWord\TextConstants;
-use app\Service\TextWord\TextNode;
-use app\Service\TextWord\WordsCombineText;
+use zxin\TextWord\TextConstants;
+use zxin\TextWord\TextNode;
+use zxin\TextWord\WordsCombineText;
 use Iterator;
 use IteratorAggregate;
 use LogicException;

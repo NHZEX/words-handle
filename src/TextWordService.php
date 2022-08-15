@@ -1,8 +1,8 @@
 <?php
 
-namespace app\Service\TextWord;
+namespace zxin\TextWord;
 
-use app\Service\TextWord\Dict\DictTypeFilter;
+use zxin\TextWord\Dict\DictTypeFilter;
 use Generator;
 use Iterator;
 use UnexpectedValueException;

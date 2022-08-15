@@ -1,6 +1,6 @@
 <?php
 
-namespace app\Service\TextWord;
+namespace zxin\TextWord;
 
 use function str_replace;
 
