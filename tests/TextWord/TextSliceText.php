@@ -4,6 +4,7 @@ namespace Zxin\Tests\TextWord;
 
 use Zxin\TextWord\TextSegment;
 use PHPUnit\Framework\TestCase;
+use function dump;
 
 class TextSliceText extends TestCase
 {
@@ -12,6 +13,18 @@ class TextSliceText extends TestCase
         yield [
             'Size: 22 x5x5 cm/ 8.66 x 1.97 * 1.97inch.',
             ['Size', ':', '22', 'x', '5', 'x', '5', 'cm', '/', '8.66', 'x', '1.97', '*', '1.97', 'inch', '.'],
+        ];
+        yield [
+            <<<TEXT
+            Product Description
+            This Jesus Door
+            
+            
+            DETAILS:
+            
+            Package includes
+            TEXT,
+            ['Product', 'Description', "\n", 'This', 'Jesus', 'Door', "\n", "\n", "\n", 'DETAILS', ':', "\n", "\n", 'Package', 'includes'],
         ];
     }
 

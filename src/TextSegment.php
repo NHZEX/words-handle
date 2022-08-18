@@ -9,10 +9,12 @@ use ReturnTypeWillChange;
 use UnexpectedValueException;
 use function bin2hex;
 use function count;
+use function explode;
 use function in_array;
 use function preg_match_all;
 use function preg_split;
 use function sprintf;
+use function str_contains;
 use function str_replace;
 use function strlen;
 use function substr;
@@ -32,7 +34,7 @@ class TextSegment implements IteratorAggregate
     protected bool $ignore4CharError = false;
 
     protected array $ignoreChar = [
-//        "\xef\xb8\x8f", // 造成问题 "❤️"
+        //        "\xef\xb8\x8f", // 造成问题 "❤️"
     ];
 
     public function __construct(string $text)
@@ -92,7 +94,19 @@ class TextSegment implements IteratorAggregate
         $section = preg_split('/(\s)/mu', $this->text, 0, PREG_SPLIT_OFFSET_CAPTURE | PREG_SPLIT_DELIM_CAPTURE);
 
         foreach ($section as $part) {
-            [$w, $pos] = $part;
+            [$w] = $part;
+
+            if (str_contains($w, '\n')) {
+                $s1 = explode('\n', $w);
+                foreach ($s1 as $i => $w2) {
+                    if ($w2) {
+                        yield from $this->optimize($this->tokenizer($w2));
+                    }
+                    if (count($s1) - 1 > $i)
+                        yield TextNode::makeWrap();
+                }
+                continue;
+            }
 
             if ($w === "\n") {
                 yield TextNode::makeWrap();
@@ -101,7 +115,7 @@ class TextSegment implements IteratorAggregate
             } elseif ('' === trim($w)) {
                 continue;
             } else {
-                yield from $this->optimize($this->tokenizer($w, $pos));
+                yield from $this->optimize($this->tokenizer($w));
             }
         }
     }
@@ -110,7 +124,7 @@ class TextSegment implements IteratorAggregate
      * @param string $section
      * @return Generator|iterable<int, TextNode>
      */
-    protected function tokenizer(string $section, int $pos): Generator
+    protected function tokenizer(string $section): Generator
     {
         $count = preg_match_all(
             "/([\p{S}\p{P}])|(\p{L}+(?:[′'][A-Za-z]*)?)|(\p{N}+(?:\.\p{N}+)?)/u",
@@ -137,9 +151,7 @@ class TextSegment implements IteratorAggregate
                     $unHex = '0x' . bin2hex($unCaptured);
                     $unCaptured  = mb_check_encoding($unCaptured, 'utf8') ? $unCaptured : $unHex;
                     $errMessage = sprintf('无法处理：未知捕获 %s:(%s)[%s], location: (%s)', $point, $unCaptured, $unHex, substr($section, 0, 16));
-                    if ($this->ignore4CharError && strlen($unCaptured) <= 4) {
-                        // log_warning($errMessage);
-                    } else {
+                    if (!($this->ignore4CharError && strlen($unCaptured) <= 4)) {
                         throw new UnexpectedValueException($errMessage);
                     }
                 }
