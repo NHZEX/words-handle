@@ -4,9 +4,8 @@ namespace Zxin\Tests\TextWord;
 
 use Zxin\TextWord\TextSegment;
 use PHPUnit\Framework\TestCase;
-use function dump;
 
-class TextSliceText extends TestCase
+class TextSliceTextTest extends TestCase
 {
     public function textSliceProvider(): \Generator
     {
