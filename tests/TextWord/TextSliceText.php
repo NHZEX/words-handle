@@ -11,7 +11,7 @@ class TextSliceText extends TestCase
     {
         yield [
             'Size: 22 x5x5 cm/ 8.66 x 1.97 * 1.97inch.',
-            ['Size', ':', '22', 'x5x5', 'cm', '/', '8.66', 'x', '1.97', '*', '1.97', 'inch', '.'],
+            ['Size', ':', '22', 'x', '5', 'x', '5', 'cm', '/', '8.66', 'x', '1.97', '*', '1.97', 'inch', '.'],
         ];
     }
 
