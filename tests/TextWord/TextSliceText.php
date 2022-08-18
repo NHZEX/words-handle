@@ -1,8 +1,8 @@
 <?php
 
-namespace zxin\Tests\TextWord;
+namespace Zxin\Tests\TextWord;
 
-use zxin\TextWord\TextSegment;
+use Zxin\TextWord\TextSegment;
 use PHPUnit\Framework\TestCase;
 
 class TextSliceText extends TestCase

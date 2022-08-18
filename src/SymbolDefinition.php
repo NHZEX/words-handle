@@ -1,6 +1,6 @@
 <?php
 
-namespace zxin\TextWord;
+namespace Zxin\TextWord;
 
 use function array_keys;
 use function array_map;

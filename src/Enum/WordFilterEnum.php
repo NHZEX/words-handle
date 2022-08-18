@@ -1,6 +1,6 @@
 <?php
 
-namespace zxin\TextWord\Enum;
+namespace Zxin\TextWord\Enum;
 
 final class WordFilterEnum
 {

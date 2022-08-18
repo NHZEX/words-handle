@@ -1,6 +1,6 @@
 <?php
 
-namespace zxin\TextWord\Dict;
+namespace Zxin\TextWord\Dict;
 
 use function preg_replace;
 use function strtolower;

@@ -1,10 +1,10 @@
 <?php
 
-namespace zxin\TextWord\Dict;
+namespace Zxin\TextWord\Dict;
 
-use zxin\TextWord\TextConstants;
-use zxin\TextWord\TextNode;
-use zxin\TextWord\WordsCombineText;
+use Zxin\TextWord\TextConstants;
+use Zxin\TextWord\TextNode;
+use Zxin\TextWord\WordsCombineText;
 use Iterator;
 use IteratorAggregate;
 use LogicException;

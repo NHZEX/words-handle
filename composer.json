@@ -19,14 +19,14 @@
     },
     "autoload": {
         "psr-4": {
-            "zxin\\TextWord\\": "src"
+            "Zxin\\TextWord\\": "src"
         },
         "files": [
         ]
     },
     "autoload-dev": {
         "psr-4": {
-            "zxin\\Tests\\": "tests"
+            "Zxin\\Tests\\": "tests"
         }
     },
     "config": {

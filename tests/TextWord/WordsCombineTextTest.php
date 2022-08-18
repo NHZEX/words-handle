@@ -1,9 +1,9 @@
 <?php
 
-namespace zxin\Tests\TextWord;
+namespace Zxin\Tests\TextWord;
 
-use zxin\TextWord\TextSegment;
-use zxin\TextWord\WordsCombineText;
+use Zxin\TextWord\TextSegment;
+use Zxin\TextWord\WordsCombineText;
 use PHPUnit\Framework\TestCase;
 
 class WordsCombineTextTest extends TestCase

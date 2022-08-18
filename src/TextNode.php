@@ -1,6 +1,6 @@
 <?php
 
-namespace zxin\TextWord;
+namespace Zxin\TextWord;
 
 use JsonSerializable;
 use function strlen;
