@@ -2,7 +2,6 @@
 
 namespace zxin\TextWord;
 
-use zxin\TextWord\Dict\DictTypeFilter;
 use Generator;
 use Iterator;
 use UnexpectedValueException;
@@ -116,24 +115,6 @@ class TextWordService
         return (new TextSegment($text))->getIterator();
     }
 
-    public function filterOnlyInvalid(iterable $items): Generator
-    {
-        /** @var TextNode $item */
-        foreach ($this->filter($items) as $item) {
-            if (!$item->isWord()) {
-                continue;
-            }
-            if ($item->stat > 0) {
-                yield $item;
-            }
-        }
-    }
-
-    public function filter(iterable $items): Generator
-    {
-        yield from DictTypeFilter::input($items);
-    }
-
     public function wordTypeGuess(iterable $items): Generator
     {
         foreach ($items as $item) {
@@ -147,24 +128,5 @@ class TextWordService
             }
             yield new TextNode($type, $item);
         }
-    }
-
-    public function synonym(string $word): array
-    {
-        return SynonymService::instance()->queryAggregationWithCheckDict($word);
-    }
-
-    public function textCheckInvalid(string $text): array
-    {
-        $output = [];
-        $it = $this->filterOnlyInvalid(TextSegment::input($this->clean($text))
-            ->setIgnoreInvalidCharacter(true)
-            ->setIgnore4CharError(true)
-            ->getIterator());
-        foreach ($it as $item) {
-            $output[] = $item;
-        }
-
-        return $output;
     }
 }

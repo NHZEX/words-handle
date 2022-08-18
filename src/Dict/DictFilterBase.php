@@ -2,7 +2,6 @@
 
 namespace zxin\TextWord\Dict;
 
-use app\Model\AmazonWordDictModel;
 use zxin\TextWord\TextConstants;
 use zxin\TextWord\TextNode;
 use zxin\TextWord\WordsCombineText;
@@ -17,8 +16,10 @@ use function array_pop;
 use function array_shift;
 use function count;
 use function implode;
+use function preg_replace;
 use function strlen;
 use function strpos;
+use function strtolower;
 
 abstract class DictFilterBase implements IteratorAggregate
 {
@@ -108,7 +109,7 @@ abstract class DictFilterBase implements IteratorAggregate
 
             QUERY_MATCH:
             $wordsText = $this->joinWord($this->buffer);
-            $queryText  = AmazonWordDictModel::buildQueryString($wordsText);
+            $queryText  = Helper::buildQueryString($wordsText);
             // dump("> {$wordsText} > {$queryText}");
             if (empty($queryText)) {
                 // dump("> skip");
@@ -128,7 +129,7 @@ abstract class DictFilterBase implements IteratorAggregate
                     // dump("> go back");
                     $goBackWord  = array_pop($this->buffer);
                     $wordsText = $this->joinWord($this->buffer);
-                    $queryText  = AmazonWordDictModel::buildQueryString($wordsText);
+                    $queryText  = Helper::buildQueryString($wordsText);
                     $_word = $this->exactQuery($queryText);
                     if (null === $_word) {
                         // 无法匹配，全部弹出
@@ -158,7 +159,7 @@ abstract class DictFilterBase implements IteratorAggregate
                         $this->words->next();
                         $_tmpBuffer[] = $item;
                         $wordsText = $this->joinWord(array_merge($this->buffer, $_tmpBuffer));
-                        $queryText = AmazonWordDictModel::buildQueryString($wordsText);
+                        $queryText = Helper::buildQueryString($wordsText);
                         // dump(">-prefix: {$wordsText} > {$queryText}");
                         $matchPos = strpos($matchQuery, $queryText);
                         if (0 !== $matchPos) {
