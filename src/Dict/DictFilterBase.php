@@ -16,6 +16,7 @@ use function array_pop;
 use function array_shift;
 use function count;
 use function implode;
+use function is_array;
 use function preg_replace;
 use function strlen;
 use function strpos;
@@ -46,13 +47,15 @@ abstract class DictFilterBase implements IteratorAggregate
     }
 
     /**
-     * @param Iterator<int, TextNode>|IteratorAggregate|DictFilterBase $data
+     * @param iterable<int, TextNode>|IteratorAggregate|DictFilterBase $data
      * @return $this
      */
     public static function input(iterable $data): DictFilterBase
     {
         if ($data instanceof IteratorAggregate) {
             $data = $data->getIterator();
+        } elseif (is_array($data)) {
+            $data = new \ArrayIterator($data);
         }
         return new static($data);
     }
