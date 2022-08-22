@@ -90,6 +90,20 @@ abstract class DictFilterBase implements IteratorAggregate
             ) {
                 continue;
             }
+            // 暂行解决方法（可能得做完善的上下文分析了）
+            if (
+                $item->isWord()
+                && $items[$i+1]->isSymbol()
+                && !isset(self::$CUT_WORDS[$items[$i+1]->text])
+            ) {
+                continue;
+            }
+            if (
+                $item->isSymbol()
+                && !isset(self::$CUT_WORDS[$items[$i+1]->text])
+            ) {
+                continue;
+            }
             $text .= ' ';
         }
         return $text;
