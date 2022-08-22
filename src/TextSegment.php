@@ -9,6 +9,7 @@ use ReturnTypeWillChange;
 use UnexpectedValueException;
 use function bin2hex;
 use function count;
+use function dump;
 use function explode;
 use function in_array;
 use function preg_match_all;
@@ -19,6 +20,7 @@ use function str_replace;
 use function strlen;
 use function substr;
 use function trim;
+use function var_dump;
 
 /**
  * @implements IteratorAggregate<int, TextNode>
@@ -161,7 +163,7 @@ class TextSegment implements IteratorAggregate
             if (-1 !== $symbol[$i][1]) {
                 yield TextNode::makeSymbol($str);
             } elseif (-1 !== $word[$i][1]) {
-                yield TextNode::makeWord($str);
+                yield from $this->handleWord($str);
             } elseif (-1 !== $number[$i][1]) {
                 yield TextNode::makeNumber($str);
             } else {
@@ -174,6 +176,30 @@ class TextSegment implements IteratorAggregate
                 yield TextNode::makeWrap();
             } elseif ('' !== trim($str)) {
                 yield new TextNode(TextConstants::TYPE_UNKNOWN, $str);
+            }
+        }
+    }
+
+    protected function handleWord(string $section): iterable
+    {
+        preg_match_all(
+            "/([[:ascii:]]+)|([[:^ascii:]]+)/u",
+            $section,
+            $matches,
+            PREG_OFFSET_CAPTURE
+        );
+        [0  => $all, 1 => $ascii, 2 => $utf8] = $matches;
+
+        $matchLen = count($matches[0]);
+        for ($i = 0; $i < $matchLen; $i++) {
+            [$str, $point] = $all[$i];
+
+            if (-1 !== $ascii[$i][1]) {
+                yield TextNode::makeWord($str);
+            } elseif (-1 !== $utf8[$i][1]) {
+                yield TextNode::makeWord($str);
+            } else {
+                throw new UnexpectedValueException("无法处理：未知分支 $point:({$str})");
             }
         }
     }

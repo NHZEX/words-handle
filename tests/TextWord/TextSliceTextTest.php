@@ -25,6 +25,14 @@ class TextSliceTextTest extends TestCase
             TEXT,
             ['Product', 'Description', "\n", 'This', 'Jesus', 'Door', "\n", "\n", "\n", 'DETAILS', ':', "\n", "\n", 'Package', 'includes'],
         ];
+
+        yield [
+            <<<TEXT
+            Product Description神経感覚
+            This Jesus Door
+            TEXT,
+            ['Product', 'Description', '神経感覚', "\n", 'This', 'Jesus', 'Door'],
+        ];
     }
 
     /**
