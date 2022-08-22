@@ -26,6 +26,7 @@ class TextConstants
     public const SYMBOL_APOSTROPHE = '\'';
     // 分割符，与字符结合有空格
     public const SYMBOL_CUT = [',', '.', '?', '!', ';'];
+    public const SYMBOL_CUT2 = [',', '?', '!', ';']; // 句号也可能是联结符，需要根据场景
     // 分割符，切断文本分析
     public const SYMBOL_SEG = [':'];
     // 换行符，切断文本分析

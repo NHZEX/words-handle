@@ -33,12 +33,17 @@ class TextNode implements JsonSerializable
     private ?string $_lower = null;
     private ?string $_upper = null;
     private ?string $_ucFirst = null;
+    private int     $length;
 
     public function __construct(string $type, string $text, ?int $stat = null)
     {
+        // 长度可能需要多字节支持
+
         $this->type = $type;
         $this->text = $text;
         $this->stat = $stat;
+
+        $this->length = strlen($text);
     }
 
     public static function makeWord(string $text, ?int $stat = null): TextNode
@@ -71,6 +76,11 @@ class TextNode implements JsonSerializable
         return TextConstants::TYPE_WORD === $this->type;
     }
 
+    public function isOneChar(): bool
+    {
+        return 1 === $this->length;
+    }
+
     public function isNumber(): bool
     {
         return TextConstants::TYPE_NUMBER === $this->type;
@@ -93,7 +103,7 @@ class TextNode implements JsonSerializable
 
     public function len(): int
     {
-        return strlen($this->text);
+        return $this->length;
     }
 
     public function toLower(): string

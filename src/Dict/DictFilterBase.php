@@ -62,7 +62,7 @@ abstract class DictFilterBase implements IteratorAggregate
 
     protected function initDict()
     {
-        self::$CUT_WORDS = array_flip([...TextConstants::SYMBOL_CUT, ...TextConstants::SYMBOL_SEG]);
+        self::$CUT_WORDS = array_flip([...TextConstants::SYMBOL_CUT2, ...TextConstants::SYMBOL_SEG]);
     }
 
     abstract protected function exactQuery(string $queryText): ?array;
@@ -72,12 +72,27 @@ abstract class DictFilterBase implements IteratorAggregate
     abstract protected function buildText(string $text, array $word): TextNode;
 
     /**
-     * @param array<int, TextNode> $item
+     * @param array<int, TextNode> $items
      * @return string
      */
-    protected function joinWord(array $item): string
+    protected function joinWord(array $items): string
     {
-        return implode(' ', array_map(fn ($v) => $v->text, $item));
+        $text = '';
+        $count = count($items) - 1;
+        foreach ($items as $i => $item) {
+            $text .= $item->text;
+            if ($i === $count) {
+                continue;
+            }
+            if (
+                1 === $item->len()
+                && 1 === $items[$i+1]->len()
+            ) {
+                continue;
+            }
+            $text .= ' ';
+        }
+        return $text;
     }
 
     public function getIterator(): Traversable
@@ -89,7 +104,7 @@ abstract class DictFilterBase implements IteratorAggregate
             /** @var TextNode $item */
             $item = $this->words->current();
             $this->words->next();
-            // dump("input: {$text}");
+            // dump("input: {$item->type}|{$item->text}");
 
             if (0 === $matchCount
                 && (
@@ -112,7 +127,7 @@ abstract class DictFilterBase implements IteratorAggregate
 
             QUERY_MATCH:
             $wordsText = $this->joinWord($this->buffer);
-            $queryText  = Helper::buildQueryString($wordsText);
+            $queryText  = DictHelper::buildQueryString($wordsText);
             // dump("> {$wordsText} > {$queryText}");
             if (empty($queryText)) {
                 // dump("> skip");
@@ -132,7 +147,7 @@ abstract class DictFilterBase implements IteratorAggregate
                     // dump("> go back");
                     $goBackWord  = array_pop($this->buffer);
                     $wordsText = $this->joinWord($this->buffer);
-                    $queryText  = Helper::buildQueryString($wordsText);
+                    $queryText  = DictHelper::buildQueryString($wordsText);
                     $_word = $this->exactQuery($queryText);
                     if (null === $_word) {
                         // 无法匹配，全部弹出
@@ -162,7 +177,7 @@ abstract class DictFilterBase implements IteratorAggregate
                         $this->words->next();
                         $_tmpBuffer[] = $item;
                         $wordsText = $this->joinWord(array_merge($this->buffer, $_tmpBuffer));
-                        $queryText = Helper::buildQueryString($wordsText);
+                        $queryText = DictHelper::buildQueryString($wordsText);
                         // dump(">-prefix: {$wordsText} > {$queryText}");
                         $matchPos = strpos($matchQuery, $queryText);
                         if (0 !== $matchPos) {
@@ -196,11 +211,14 @@ abstract class DictFilterBase implements IteratorAggregate
                         throw new LogicException('不允许存在多个匹配值');
                     }
                     if (count($this->buffer) > 1) {
+                        $lastKey = array_key_last($this->buffer);
                         // 处理符号误粘连问题
                         if (!$this->buffer[0]->isWord()) {
                             yield array_shift($this->buffer);
                         } elseif (
-                            $this->buffer[array_key_last($this->buffer)]->isSymbol()
+                            $this->buffer[$lastKey]->isSymbol()
+                            // 不是断开符号不做分隔
+                            && isset(self::$CUT_WORDS[$this->buffer[$lastKey]->text])
                         ) {
                             $_tmpSymbolLast = array_pop($this->buffer);
                         }
