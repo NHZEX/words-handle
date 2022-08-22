@@ -197,6 +197,11 @@ class WordsCombineTextTest extends TestCase
             'A&B',
             'A&B',
         ];
+        // 符号链接问题
+        yield [
+            'BY-50',
+            'By-50',
+        ];
     }
 
     /**

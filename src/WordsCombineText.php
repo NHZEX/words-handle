@@ -307,6 +307,16 @@ final class WordsCombineText
                 if (isset($items[$i + 1]) && !($items[$i + 1]->isSymbol() || $items[$i + 1]->isWrap())) {
                     $output[] = TextNode::makeSpace();
                 }
+            } elseif (
+                $node->isSymbol()
+                && $node->isEqual('-')
+                && isset($items[$i - 1])
+                && $items[$i - 1]->isWord()
+                && isset($items[$i + 1])
+                && ($items[$i + 1]->isWord() || $items[$i + 1]->isNumber())
+            ) {
+                // 解决：引号、连接符
+                $output[] = clone $node;
             } elseif ($items[$i + 1]->isSymbol()) {
                 // 解决：引号、连接符
                 $output[] = clone $node;
