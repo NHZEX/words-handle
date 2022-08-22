@@ -192,6 +192,11 @@ class WordsCombineTextTest extends TestCase
             '4 Pcs Cord Organizer, Stick on Cord Winder Kitchen Appliances, Cord Wrapper Cable Management Gadgets for Appliance Cables Storage 4 Packs 5 x 7 inch',
             true,
         ];
+        // 符号链接问题
+        yield [
+            'A&B',
+            'A&B',
+        ];
     }
 
     /**
@@ -203,7 +208,7 @@ class WordsCombineTextTest extends TestCase
         $words = [];
         foreach (TextSegment::input($input) as $item) {
             $words[] = $item;
-            //var_dump("({$item['type']}) {$item['text']}");
+            // var_dump("({$item->type}) {$item->text}");
         }
         //var_dump($words);
 
