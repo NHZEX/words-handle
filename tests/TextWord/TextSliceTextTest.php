@@ -33,6 +33,16 @@ class TextSliceTextTest extends TestCase
             TEXT,
             ['Product', 'Description', '神経感覚', "\n", 'This', 'Jesus', 'Door'],
         ];
+
+        yield [
+            'FUNCTION: 神経感覚 apple repel any pest bba',
+            ['FUNCTION', ':', '神経感覚', 'apple', 'repel', 'any', 'pest', 'bba'],
+        ];
+
+        yield [
+            'Product Description YSX Ampai\'s This Jesus',
+            ['Product', 'Description', 'YSX', 'Ampai\'s', 'This', 'Jesus'],
+        ];
     }
 
     /**
