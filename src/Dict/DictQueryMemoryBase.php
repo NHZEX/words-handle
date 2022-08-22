@@ -4,12 +4,18 @@ namespace Zxin\TextWord\Dict;
 
 use Fuse\Fuse;
 use function array_map;
+use function count;
+use function sprintf;
 
-abstract class DictQueryBase
+abstract class DictQueryMemoryBase
 {
     private Fuse $fuse;
 
-    public function __construct()
+    public const DICT_ITEM_COUNT = 3000;
+
+    public function __construct(
+        private bool $enableBigDictWarning = true,
+    )
     {
         $this->load();
     }
@@ -18,8 +24,14 @@ abstract class DictQueryBase
 
     abstract protected function getKeys(): array;
 
-    public function load()
+    public function load(): void
     {
+        $dict = $this->getDict();
+        if ($this->enableBigDictWarning && count($dict) > self::DICT_ITEM_COUNT) {
+            throw new \LogicException(
+                sprintf('try to load big dictionary (>%d)', self::DICT_ITEM_COUNT)
+            );
+        }
         $options = [
             'keys' => $this->getKeys(),
             'includeScore' => true,
@@ -27,7 +39,7 @@ abstract class DictQueryBase
             'threshold' => 0.0,
             'useExtendedSearch' => true,
         ];
-        $this->fuse = new Fuse($this->getDict(), $options);
+        $this->fuse = new Fuse($dict, $options);
     }
 
     public function query(string $text, int $limit = -1): array
