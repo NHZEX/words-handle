@@ -445,7 +445,9 @@ final class WordsCombineText
             return "{$item->text}:{$items[$i + 2]->text}";
         } elseif (
             $item->isNumber()
+            && isset($items[$i + 1])
             && ($_op = SymbolDefinition::isNumberOperator($items[$i + 1]->text))
+            && isset($items[$i + 2])
             && $items[$i + 2]->isNumber()
         ) {
             // 运算符
