@@ -202,6 +202,17 @@ class WordsCombineTextTest extends TestCase
             'BY-50',
             'By-50',
         ];
+        // ddd
+        yield [
+            'turkey, 1 PCS',
+            'Turkey, 1 Pcs',
+            true,
+        ];
+        yield [
+            'Chicken Tenders, 1Pcs Meat Hammer, easy to clean easy to use Meat Masher, Kitchen Tools for chicken, turkey',
+            'Chicken Tenders, 1 Pcs Meat Hammer, Easy to Clean Easy to Use Meat Masher, Kitchen Tools for Chicken, Turkey',
+            true,
+        ];
     }
 
     /**

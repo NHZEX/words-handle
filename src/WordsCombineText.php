@@ -37,6 +37,8 @@ final class WordsCombineText
 
     public const STYLE_FORMAT_FEATURE = 'product_feature';
 
+    private bool $iso3166Support = false;
+
     protected function __construct(array $words)
     {
         $this->words = $words;
@@ -182,7 +184,8 @@ final class WordsCombineText
                 }
             }
 
-            if ($node->isWord()) {
+            // todo 这个处理会导致一系列错误问题
+            if ($this->iso3166Support && $node->isWord()) {
                 $newIndex = 0;
                 if ($_text = $this->blockAnalyzeISO3166($items, $i, $newIndex)) {
                     $output[] = TextNode::makeWord($_text, $node->stat);
@@ -265,7 +268,7 @@ final class WordsCombineText
             // 上下文分析结合
             if ($i === $len - 1) {
                 $output[] = clone $node;
-            } elseif ($node->isWrap() || $items[$i + 1]->isWrap()) {
+            } elseif ($node->isWrap() || (isset($items[$i + 1]) && $items[$i + 1]->isWrap())) {
                 // 换行后面不需要空格
                 $output[] = clone $node;
             } elseif ($node->isEqual('.') && $items[$i + 1]->isEqual('.') && $items[$i + 2]->isEqual('.')) {
